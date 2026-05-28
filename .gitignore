@@ -1,0 +1,11 @@
+.DS_Store
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+*.xccheckout
+*.moved-aside
+*.xcscmblueprint
+
+# QA / UI-test working dir (DerivedData, xcresult bundles, exported screenshots)
+.qa-ui-review/
