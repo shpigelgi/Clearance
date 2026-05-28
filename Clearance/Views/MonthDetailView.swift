@@ -116,6 +116,7 @@ struct MonthDetailView: View {
                 VStack(spacing: zoomed(16)) {
                     clearanceCheckSection
                     wealthEngineSection
+                    monthRoutingSummarySection
                     growthEstimatorSection
                 }
 
@@ -533,7 +534,7 @@ struct MonthDetailView: View {
                 transferNameEditor(id: id, name: name, defaultName: defaultName)
                     .frame(width: zoomed(210), alignment: .leading)
 
-                numberField(title: "Amount", value: amount, field: field, defaultValue: defaultAmount)
+                numberField(title: "\(displayName) amount", value: amount, field: field, defaultValue: defaultAmount)
             }
             .frame(maxWidth: zoomed(330), alignment: .leading)
 

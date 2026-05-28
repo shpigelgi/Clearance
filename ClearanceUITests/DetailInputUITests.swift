@@ -91,28 +91,21 @@ final class DetailInputUITests: ClearanceUITestCase {
         XCTAssertEqual(box.value as? Int, 0, "Clicking again should unmark the transfer")
     }
 
-    func test_monthRoutingSummary_hiddenInNarrowLayout() throws {
-        // KNOWN BUG (#1): the "Month Routing" summary — Effective Income, Planned/Confirmed
-        // totals and the "X of 4 complete" progress — only renders in the two-column layout
-        // (width >= 820pt). In a narrow window it silently disappears.
-        // MonthDetailView.detailContent omits monthRoutingSummarySection in the single-column branch.
-        // Remove this XCTExpectFailure once the summary is shown in both layouts.
-        XCTExpectFailure("Month Routing summary is dropped in the single-column (narrow) layout")
+    func test_monthRoutingSummary_visibleInNarrowLayout() throws {
+        // Regression (fixed bug #1): the "Month Routing" summary — Effective Income,
+        // Planned/Confirmed totals and the "X of 4 complete" progress — must render in the
+        // single-column (narrow) layout too, not only in the two-column layout.
         XCTAssertTrue(
-            app.staticTexts["Transfer Progress"].waitForExistence(timeout: 3),
+            app.staticTexts["Transfer Progress"].waitForExistence(timeout: 5),
             "The Month Routing summary should be visible regardless of window width"
         )
     }
 
-    func test_amountFieldLabelCollision() throws {
-        // KNOWN BUG (#3): all four Wealth-Engine amount fields share accessibilityLabel "Amount",
-        // ambiguous for VoiceOver and automation. Give each a unique label, then delete this guard.
-        let amounts = app.textFields.matching(identifier: "Amount").allElementsBoundByIndex
+    func test_amountFields_haveUniqueLabels() throws {
+        // Regression (fixed bug #3): the four Wealth-Engine amount fields used to share
+        // accessibilityLabel "Amount". Each should now carry a unique, transfer-specific label.
         snapshot(name: "amount-fields")
-        XCTExpectFailure("Four amount fields collide on the label 'Amount'")
-        XCTAssertLessThanOrEqual(
-            amounts.count, 1,
-            "\(amounts.count) text fields share the label 'Amount'"
-        )
+        let collisions = app.textFields.matching(identifier: "Amount").count
+        XCTAssertEqual(collisions, 0, "No amount field should use the generic label 'Amount' (found \(collisions))")
     }
 }

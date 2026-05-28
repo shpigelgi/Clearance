@@ -23,16 +23,14 @@ struct ClearanceApp: App {
                 .keyboardShortcut("e", modifiers: [.command, .shift])
             }
 
-            CommandMenu("View") {
+            // Merge zoom commands into the system "View" menu. Using CommandMenu("View")
+            // would append a SECOND "View" menu to the menu bar.
+            CommandGroup(after: .toolbar) {
+                Divider()
                 Button("Zoom In") {
                     zoomController.zoomIn()
                 }
                 .keyboardShortcut("+", modifiers: [.command])
-
-                Button("Zoom In") {
-                    zoomController.zoomIn()
-                }
-                .keyboardShortcut("=", modifiers: [.command])
 
                 Button("Zoom Out") {
                     zoomController.zoomOut()

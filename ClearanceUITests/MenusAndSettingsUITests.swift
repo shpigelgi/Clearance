@@ -4,16 +4,19 @@ import XCTest
 final class MenusAndSettingsUITests: ClearanceUITestCase {
 
     func test_viewMenu_isNotDuplicated() throws {
-        // KNOWN BUG (#2): CommandMenu("View") appends a SECOND "View" menu instead of
-        // merging into the system View menu, and it defines "Zoom In" twice (⌘+ and ⌘=),
-        // so the menu bar shows two "View" menus each with a duplicate "Zoom In".
-        // Fix: merge via CommandGroup and give the ⌘= shortcut to a single button.
+        // Regression (fixed bug #2): zoom commands are merged into the system "View" menu
+        // via CommandGroup, so the menu bar must contain exactly one "View" menu (not two),
+        // and "Zoom In" must appear only once.
         let menuBar = app.menuBars.firstMatch
         XCTAssertTrue(menuBar.waitForExistence(timeout: 5))
-        let viewMenus = menuBar.menuBarItems.matching(identifier: "View").allElementsBoundByIndex
+        let viewMenus = menuBar.menuBarItems.matching(identifier: "View").count
         snapshot(name: "menu-bar")
-        XCTExpectFailure("Menu bar contains a duplicate 'View' menu")
-        XCTAssertEqual(viewMenus.count, 1, "There should be exactly one 'View' menu (found \(viewMenus.count))")
+        XCTAssertEqual(viewMenus, 1, "There should be exactly one 'View' menu (found \(viewMenus))")
+
+        menuBar.menuBarItems["View"].click()
+        let zoomInCount = app.menuItems.matching(identifier: "Zoom In").count
+        app.typeKey(.escape, modifierFlags: [])
+        XCTAssertEqual(zoomInCount, 1, "'Zoom In' should appear once in the View menu (found \(zoomInCount))")
     }
 
     func test_zoomInOutActualSize_doNotCrash() throws {
