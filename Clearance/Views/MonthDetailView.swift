@@ -677,7 +677,7 @@ private struct RoutingCategoryRow: View {
 
             Spacer(minLength: zoomed(8))
 
-            TextField("Amount", value: $category.target, format: Formatters.number)
+            TextField("\(displayName) amount", value: $category.target, format: Formatters.number)
                 .financialFieldStyle(width: 100)
                 .accessibilityLabel("\(displayName) amount")
 

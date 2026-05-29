@@ -66,10 +66,10 @@ final class MenusAndSettingsUITests: ClearanceUITestCase {
         let settings = app.windows["Clearance Settings"]
         XCTAssertTrue(settings.waitForExistence(timeout: 5), "Settings window should open")
         snapshot(name: "settings-window")
-        // "Wealth Engine Labels" section header is unique to Settings (avoids the
+        // "Wealth Routing Categories" section header is unique to Settings (avoids the
         // 'Income' label that also exists in the detail window).
         XCTAssertTrue(
-            settings.staticTexts["Wealth Engine Labels"].waitForExistence(timeout: 3),
+            settings.staticTexts["Wealth Routing Categories"].waitForExistence(timeout: 3),
             "Settings window should show its preference sections"
         )
     }
