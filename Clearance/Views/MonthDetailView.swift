@@ -416,7 +416,7 @@ struct MonthDetailView: View {
         VStack(alignment: .leading, spacing: zoomed(8)) {
             Text("12-month projected value")
                 .font(.subheadline.weight(.semibold))
-            Text("Each fund compounds this month's target at its own annual rate.")
+            Text("Projects this month's targets a year out, each at its own annual rate.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
