@@ -276,7 +276,7 @@ private struct MonthRow: View {
                 .font(.headline)
             Text("\(review.remainingBuffer >= 0 ? "Surplus" : "Deficit"): \(review.remainingBuffer.formatted(Formatters.currency))")
                 .font(.caption)
-                .foregroundStyle(review.remainingBuffer >= 0 ? Color.green : Color.red)
+                .foregroundStyle(review.remainingBuffer >= 0 ? Color(.systemGreen) : Color(.systemRed))
         }
         .padding(.vertical, 4)
         .accessibilityElement(children: .combine)

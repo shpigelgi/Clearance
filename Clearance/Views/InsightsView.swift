@@ -60,9 +60,9 @@ struct InsightsView: View {
     private var chartSection: some View {
         VStack(alignment: .leading, spacing: zoomed(10)) {
             Text("Buffer Trend")
-                .font(.system(size: zoomed(13), weight: .semibold))
+                .font(.subheadline.weight(.semibold))
             Text("Last \(viewModel.recentSix.count) month\(viewModel.recentSix.count == 1 ? "" : "s"), sorted by month key")
-                .font(.system(size: zoomed(10)))
+                .font(.caption2)
                 .foregroundStyle(.secondary)
 
             Chart(viewModel.recentSix) { review in
@@ -77,7 +77,7 @@ struct InsightsView: View {
                     x: .value("Month", review.monthKey),
                     y: .value("Remaining Buffer", review.remainingBuffer)
                 )
-                .foregroundStyle(review.remainingBuffer >= 0 ? Color.green : Color.red)
+                .foregroundStyle(review.remainingBuffer >= 0 ? Color(.systemGreen) : Color(.systemRed))
             }
             .chartYAxis {
                 AxisMarks(position: .leading)
@@ -139,21 +139,21 @@ private struct ReviewAnalyticsCard<Content: View>: View {
         VStack(alignment: .leading, spacing: zoomed(16)) {
             if let title, let systemImage {
                 Label(title, systemImage: systemImage)
-                    .font(.system(size: zoomed(17), weight: .semibold))
+                    .font(.headline)
             }
 
             content
         }
         .padding(zoomed(20))
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
+        .glassSurface(cornerRadius: zoomed(20)) {
             RoundedRectangle(cornerRadius: zoomed(20), style: .continuous)
                 .fill(Color(nsColor: .controlBackgroundColor))
                 .shadow(color: .black.opacity(0.06), radius: zoomed(18), y: zoomed(8))
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: zoomed(20), style: .continuous)
-                .strokeBorder(Color.secondary.opacity(0.08))
+                .overlay {
+                    RoundedRectangle(cornerRadius: zoomed(20), style: .continuous)
+                        .strokeBorder(Color.secondary.opacity(0.08))
+                }
         }
     }
 }
@@ -171,12 +171,12 @@ private struct MetricTile: View {
     var body: some View {
         VStack(alignment: .leading, spacing: zoomed(8)) {
             Text(title)
-                .font(.system(size: zoomed(10), weight: .semibold))
+                .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
             Text(value)
-                .font(.system(size: zoomed(24), weight: .semibold, design: .rounded))
+                .font(.system(.title2, design: .rounded, weight: .semibold))
             Text(subtitle)
-                .font(.system(size: zoomed(10)))
+                .font(.caption2)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }

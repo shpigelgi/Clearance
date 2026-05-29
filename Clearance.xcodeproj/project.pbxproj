@@ -28,6 +28,7 @@
 		A9E80A980324E02BF90B5884 /* ClearanceUITestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB3094350E8753736E545FD2 /* ClearanceUITestCase.swift */; };
 		DFD032B7E721A844209C88B7 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7BB1B2864D8053283475FE9 /* Cocoa.framework */; };
 		EB7C0A5016C2D03C2A795C79 /* MenusAndSettingsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 991744E68A8E12774D879A8D /* MenusAndSettingsUITests.swift */; };
+		FB5F51311915099A0F2D2412 /* GlassSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B2BEF6D1DCB69DE3ECE8EFE /* GlassSurface.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -42,6 +43,7 @@
 
 /* Begin PBXFileReference section */
 		40D5823E68C023B05405BB4D /* DetailInputUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DetailInputUITests.swift; sourceTree = "<group>"; };
+		4B2BEF6D1DCB69DE3ECE8EFE /* GlassSurface.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GlassSurface.swift; sourceTree = "<group>"; };
 		991744E68A8E12774D879A8D /* MenusAndSettingsUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MenusAndSettingsUITests.swift; sourceTree = "<group>"; };
 		A10000000000000000000001 /* ClearanceApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearanceApp.swift; sourceTree = "<group>"; };
 		A10000000000000000000002 /* ClearanceAppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearanceAppModel.swift; sourceTree = "<group>"; };
@@ -155,6 +157,7 @@
 				A1000000000000000000000F /* AppZoomController.swift */,
 				A10000000000000000000010 /* AppZoomEnvironment.swift */,
 				A10000000000000000000011 /* RevertableInputRow.swift */,
+				4B2BEF6D1DCB69DE3ECE8EFE /* GlassSurface.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -308,6 +311,7 @@
 				A0000000000000000000000E /* AppZoomController.swift in Sources */,
 				A0000000000000000000000F /* AppZoomEnvironment.swift in Sources */,
 				A00000000000000000000010 /* RevertableInputRow.swift in Sources */,
+				FB5F51311915099A0F2D2412 /* GlassSurface.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -77,10 +77,6 @@ struct MonthDetailView: View {
         value * CGFloat(appZoomScale)
     }
 
-    private func zoomedFont(_ size: CGFloat, weight: Font.Weight = .regular, design: Font.Design = .default) -> Font {
-        .system(size: zoomed(size), weight: weight, design: design)
-    }
-
     @ViewBuilder
     private func detailContent(for width: CGFloat) -> some View {
         if usesTwoColumns(for: width) {
@@ -154,9 +150,9 @@ struct MonthDetailView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: zoomed(6)) {
             Text(Formatters.monthTitle(from: review.monthKey))
-                .font(zoomedFont(28, weight: .semibold))
+                .font(.system(.largeTitle, weight: .semibold))
             Text("Route income with intent, then keep the historical record untouched.")
-                .font(zoomedFont(13))
+                .font(.callout)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -265,14 +261,25 @@ struct MonthDetailView: View {
                     formLabel("Remaining Buffer", detail: "Income - rent - actual card spend")
                     VStack(alignment: .leading, spacing: zoomed(4)) {
                         Text(review.remainingBuffer, format: Formatters.currency)
-                            .font(zoomedFont(26, weight: .bold, design: .rounded))
+                            .font(.system(.title, design: .rounded, weight: .bold))
                             .monospacedDigit()
                             .foregroundStyle(bufferStatusColor)
                         Label(bufferStatusLabel, systemImage: bufferStatusSystemImage)
-                            .font(zoomedFont(11, weight: .semibold))
+                            .font(.caption.weight(.semibold))
                             .foregroundStyle(bufferStatusColor)
                     }
                     .frame(maxWidth: zoomed(180), alignment: .leading)
+                    .padding(zoomed(12))
+                    .background {
+                        // Subtle state-reactive wash behind the bold colored number. (A tinted
+                        // glassEffect renders near-solid and makes the same-colored text
+                        // unreadable, so use a faint fill instead and keep glass for the cards.)
+                        RoundedRectangle(cornerRadius: zoomed(16), style: .continuous)
+                            .fill(bufferStatusColor.opacity(0.12))
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("Remaining buffer")
+                    .accessibilityValue("\(review.remainingBuffer.formatted(Formatters.currency)), \(bufferStatusLabel)")
                 }
             }
             .frame(maxWidth: zoomed(560), alignment: .leading)
@@ -288,7 +295,7 @@ struct MonthDetailView: View {
     }
 
     private var bufferStatusColor: Color {
-        review.remainingBuffer >= 0 ? .green : .red
+        review.remainingBuffer >= 0 ? Color(.systemGreen) : Color(.systemRed)
     }
 
     private var incomeModeBinding: Binding<Bool> {
@@ -322,9 +329,9 @@ struct MonthDetailView: View {
     private func inputLabel(title: String, subtitle: String) -> some View {
         VStack(alignment: .leading, spacing: zoomed(3)) {
             Text(title)
-                .font(zoomedFont(13, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
             Text(subtitle)
-                .font(zoomedFont(10))
+                .font(.caption2)
                 .foregroundStyle(.secondary)
         }
     }
@@ -332,11 +339,11 @@ struct MonthDetailView: View {
     private func formLabel(_ title: String, detail: String? = nil) -> some View {
         VStack(alignment: .trailing, spacing: zoomed(3)) {
             Text(title)
-                .font(zoomedFont(13, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
 
             if let detail {
                 Text(detail)
-                    .font(zoomedFont(10))
+                    .font(.caption2)
                     .foregroundStyle(.secondary)
             }
         }
@@ -384,7 +391,7 @@ struct MonthDetailView: View {
                     .accessibilityLabel(title)
 
                 Text("%")
-                    .font(zoomedFont(10, weight: .semibold))
+                    .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
         }
@@ -472,10 +479,10 @@ struct MonthDetailView: View {
                 VStack(alignment: .leading, spacing: zoomed(8)) {
                     HStack {
                         Text("Transfer Progress")
-                            .font(zoomedFont(13, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                         Spacer()
                         Text("\(review.completedTransferCount) of \(MonthlyReview.totalTransferCount) complete")
-                            .font(zoomedFont(11))
+                            .font(.caption)
                             .foregroundStyle(.secondary)
                     }
 
@@ -484,6 +491,8 @@ struct MonthDetailView: View {
                         total: Double(MonthlyReview.totalTransferCount)
                     )
                     .progressViewStyle(.linear)
+                    .accessibilityLabel("Transfer progress")
+                    .accessibilityValue("\(review.completedTransferCount) of \(MonthlyReview.totalTransferCount) complete")
                 }
             }
         }
@@ -492,13 +501,13 @@ struct MonthDetailView: View {
     private func summaryMetricRow(title: String, value: String, detail: String) -> some View {
         VStack(alignment: .leading, spacing: zoomed(4)) {
             Text(title)
-                .font(zoomedFont(11, weight: .semibold))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
             Text(value)
-                .font(zoomedFont(22, weight: .semibold, design: .rounded))
+                .font(.system(.title2, design: .rounded, weight: .semibold))
                 .monospacedDigit()
             Text(detail)
-                .font(zoomedFont(10))
+                .font(.caption2)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -561,14 +570,14 @@ struct MonthDetailView: View {
             if editingTransferName == id {
                 TextField(defaultName, text: name)
                     .textFieldStyle(.plain)
-                    .font(zoomedFont(13, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: zoomed(160), alignment: .leading)
                     .onSubmit {
                         editingTransferName = nil
                     }
             } else {
                 Text(name.wrappedValue.isEmpty ? defaultName : name.wrappedValue)
-                    .font(zoomedFont(13, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
             }
 
@@ -576,11 +585,11 @@ struct MonthDetailView: View {
                 editingTransferName = editingTransferName == id ? nil : id
             } label: {
                 Image(systemName: editingTransferName == id ? "checkmark.circle" : "pencil")
-                    .font(zoomedFont(11))
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
-            .opacity(hoveredTransferName == id || editingTransferName == id ? 1 : 0.42)
+            .opacity(hoveredTransferName == id || editingTransferName == id ? 1 : 0.6)
             .accessibilityLabel(editingTransferName == id ? "Finish Editing Transfer Name" : "Edit Transfer Name")
             .help(editingTransferName == id ? "Finish editing transfer name" : "Edit transfer name")
 
@@ -591,7 +600,7 @@ struct MonthDetailView: View {
                 name.wrappedValue = defaultName
                 editingTransferName = nil
             }
-            .opacity(hoveredTransferName == id || editingTransferName == id ? 1 : 0.42)
+            .opacity(hoveredTransferName == id || editingTransferName == id ? 1 : 0.6)
         }
         .frame(width: zoomed(210), alignment: .leading)
     }
@@ -694,9 +703,9 @@ struct MonthDetailView: View {
     private var growthEstimatorCopy: some View {
         VStack(alignment: .leading, spacing: zoomed(8)) {
             Text("12-month projected value")
-                .font(zoomedFont(13, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
             Text("\(review.resolvedIITTransferName) uses \(review.resolvedIITAnnualRate.formatted(Formatters.percent)). Keren Kaspit funds use \(review.resolvedKerenAnnualRate.formatted(Formatters.percent)).")
-                .font(zoomedFont(13))
+                .font(.callout)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -705,11 +714,11 @@ struct MonthDetailView: View {
     private var growthEstimatorValue: some View {
         VStack(alignment: .trailing, spacing: zoomed(6)) {
             Text(review.twelveMonthProjection, format: Formatters.currency)
-                .font(zoomedFont(34, weight: .semibold, design: .rounded))
+                .font(.system(.largeTitle, design: .rounded, weight: .semibold))
                 .minimumScaleFactor(0.75)
                 .lineLimit(1)
             Text("Based on this month's copied targets")
-                .font(zoomedFont(10))
+                .font(.caption2)
                 .foregroundStyle(.secondary)
         }
     }
@@ -728,20 +737,20 @@ private struct ReviewCard<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: zoomed(16)) {
             Label(title, systemImage: systemImage)
-                .font(.system(size: zoomed(17), weight: .semibold))
+                .font(.headline)
 
             content
         }
         .padding(zoomed(20))
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
+        .glassSurface(cornerRadius: zoomed(20)) {
             RoundedRectangle(cornerRadius: zoomed(20), style: .continuous)
                 .fill(Color(nsColor: .controlBackgroundColor))
                 .shadow(color: .black.opacity(0.06), radius: zoomed(18), y: zoomed(8))
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: zoomed(20), style: .continuous)
-                .strokeBorder(Color.secondary.opacity(0.08))
+                .overlay {
+                    RoundedRectangle(cornerRadius: zoomed(20), style: .continuous)
+                        .strokeBorder(Color.secondary.opacity(0.08))
+                }
         }
     }
 }
@@ -757,7 +766,7 @@ private struct FinancialFieldStyle: ViewModifier {
     func body(content: Content) -> some View {
         content
             .textFieldStyle(.roundedBorder)
-            .font(.system(size: max(11, 13 * zoom)))
+            .font(.body)
             .monospacedDigit()
             .multilineTextAlignment(.trailing)
             .labelsHidden()

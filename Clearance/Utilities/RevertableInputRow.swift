@@ -54,7 +54,7 @@ struct RevertToDefaultButton: View {
         .buttonStyle(.plain)
         .help("Revert \(title) to default")
         .accessibilityLabel("Revert \(title) to default")
-        .opacity(isDefault ? 0.28 : 0.82)
+        .opacity(isDefault ? 0.4 : 0.82)
         .disabled(isDefault)
     }
 }
