@@ -20,9 +20,9 @@ struct InsightsViewModel {
         Array(chronologicallySortedReviews.suffix(6))
     }
 
-    var rollingAverage1824: Double {
+    var rollingSpendAverage: Double {
         guard !recentThree.isEmpty else { return 0 }
-        let total = recentThree.reduce(0) { $0 + $1.actual1824 }
+        let total = recentThree.reduce(0) { $0 + $1.totalActualSpend }
         return total / Double(recentThree.count)
     }
 

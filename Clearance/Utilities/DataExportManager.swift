@@ -60,6 +60,19 @@ final class DataExportManager: ObservableObject {
 }
 
 struct MonthlyReviewExportRecord: Codable {
+    struct SpendRecord: Codable {
+        let name: String
+        let target: Double
+        let actual: Double
+    }
+
+    struct RoutingRecord: Codable {
+        let name: String
+        let target: Double
+        let didTransfer: Bool
+        let annualRate: Double
+    }
+
     let monthKey: String
     let createdAt: Date
     let income: Double
@@ -69,26 +82,9 @@ struct MonthlyReviewExportRecord: Codable {
     let daysWorked: Double
     let incomePerWorkday: Double
     let rent: Double
-    let targetMizrahi: Double
-    let target1824: Double
-    let targetIIT: Double
-    let targetEmergencyFund: Double
-    let targetAbarthFund: Double
-    let targetHobbyFund: Double
-    let iitTransferName: String
-    let emergencyFundName: String
-    let abarthFundName: String
-    let hobbyFundName: String
-    let iitAnnualRate: Double
-    let kerenAnnualRate: Double
-    let actualMizrahi: Double
-    let actual1824: Double
-    let didTransferIIT: Bool
-    let didTransferEmergencyFund: Bool
-    let didTransferAbarthFund: Bool
-    let didTransferHobbyFund: Bool
+    let spendCategories: [SpendRecord]
+    let routingCategories: [RoutingRecord]
     let remainingBuffer: Double
-    let combinedKerenKaspitTransfers: Double
     let twelveMonthProjection: Double
     let totalWealthRouted: Double
 
@@ -102,26 +98,13 @@ struct MonthlyReviewExportRecord: Codable {
         daysWorked = review.daysWorked
         incomePerWorkday = review.incomePerWorkday
         rent = review.rent
-        targetMizrahi = review.targetMizrahi
-        target1824 = review.target1824
-        targetIIT = review.targetIIT
-        targetEmergencyFund = review.targetEmergencyFund
-        targetAbarthFund = review.targetAbarthFund
-        targetHobbyFund = review.targetHobbyFund
-        iitTransferName = review.resolvedIITTransferName
-        emergencyFundName = review.resolvedEmergencyFundName
-        abarthFundName = review.resolvedAbarthFundName
-        hobbyFundName = review.resolvedHobbyFundName
-        iitAnnualRate = review.iitAnnualRate
-        kerenAnnualRate = review.kerenAnnualRate
-        actualMizrahi = review.actualMizrahi
-        actual1824 = review.actual1824
-        didTransferIIT = review.didTransferIIT
-        didTransferEmergencyFund = review.didTransferEmergencyFund
-        didTransferAbarthFund = review.didTransferAbarthFund
-        didTransferHobbyFund = review.didTransferHobbyFund
+        spendCategories = review.sortedSpendCategories.map {
+            SpendRecord(name: $0.name, target: $0.target, actual: $0.actual)
+        }
+        routingCategories = review.sortedRoutingCategories.map {
+            RoutingRecord(name: $0.name, target: $0.target, didTransfer: $0.didTransfer, annualRate: $0.annualRate)
+        }
         remainingBuffer = review.remainingBuffer
-        combinedKerenKaspitTransfers = review.combinedKerenKaspitTransfers
         twelveMonthProjection = review.twelveMonthProjection
         totalWealthRouted = review.totalWealthRouted
     }

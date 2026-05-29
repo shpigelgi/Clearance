@@ -34,17 +34,25 @@ final class MonthlyReview {
     var didTransferAbarthFund: Bool
     var didTransferHobbyFund: Bool
 
+    // Dynamic, user-customizable categories. The scalar fields above are retained (deprecated)
+    // only so existing stores migrate losslessly and CategoryBackfill can seed these from them.
+    @Relationship(deleteRule: .cascade, inverse: \SpendCategory.review)
+    var spendCategories: [SpendCategory] = []
+
+    @Relationship(deleteRule: .cascade, inverse: \RoutingCategory.review)
+    var routingCategories: [RoutingCategory] = []
+
     init(
         monthKey: String,
         createdAt: Date = .now,
         income: Double,
         rent: Double,
-        targetMizrahi: Double,
-        target1824: Double,
-        targetIIT: Double,
-        targetEmergencyFund: Double,
-        targetAbarthFund: Double,
-        targetHobbyFund: Double,
+        targetMizrahi: Double = 0,
+        target1824: Double = 0,
+        targetIIT: Double = 0,
+        targetEmergencyFund: Double = 0,
+        targetAbarthFund: Double = 0,
+        targetHobbyFund: Double = 0,
         iitTransferName: String = "IIT portfolio",
         emergencyFundName: String = "Emergency Keren Kaspit",
         abarthFundName: String = "Abarth Keren Kaspit",
@@ -96,52 +104,38 @@ extension MonthlyReview {
         calculatesIncomeFromDays ? daysWorked * incomePerWorkday : income
     }
 
-    var remainingBuffer: Double {
-        effectiveIncome - rent - actualMizrahi - actual1824
+    // Categories sorted for stable display/iteration.
+    var sortedSpendCategories: [SpendCategory] {
+        spendCategories.sorted { $0.sortOrder < $1.sortOrder }
     }
 
-    var combinedKerenKaspitTransfers: Double {
-        targetEmergencyFund + targetAbarthFund + targetHobbyFund
+    var sortedRoutingCategories: [RoutingCategory] {
+        routingCategories.sorted { $0.sortOrder < $1.sortOrder }
+    }
+
+    var totalActualSpend: Double {
+        spendCategories.reduce(0) { $0 + $1.actual }
+    }
+
+    var remainingBuffer: Double {
+        effectiveIncome - rent - totalActualSpend
     }
 
     var twelveMonthProjection: Double {
-        (targetIIT * 12 * (1 + resolvedIITAnnualRate)) + (combinedKerenKaspitTransfers * 12 * (1 + resolvedKerenAnnualRate))
-    }
-
-    var resolvedIITAnnualRate: Double {
-        iitAnnualRate > 0 ? iitAnnualRate : 0.08
-    }
-
-    var resolvedKerenAnnualRate: Double {
-        kerenAnnualRate > 0 ? kerenAnnualRate : 0.0375
-    }
-
-    var resolvedIITTransferName: String {
-        iitTransferName.isEmpty ? "IIT portfolio" : iitTransferName
-    }
-
-    var resolvedEmergencyFundName: String {
-        emergencyFundName.isEmpty ? "Emergency Keren Kaspit" : emergencyFundName
-    }
-
-    var resolvedAbarthFundName: String {
-        abarthFundName.isEmpty ? "Abarth Keren Kaspit" : abarthFundName
-    }
-
-    var resolvedHobbyFundName: String {
-        hobbyFundName.isEmpty ? "Hobby Keren Kaspit" : hobbyFundName
+        routingCategories.reduce(0.0) { partial, category in
+            let annual = category.target * 12.0
+            return partial + annual * (1.0 + category.annualRate)
+        }
     }
 
     var totalWealthRouted: Double {
-        let iit = didTransferIIT ? targetIIT : 0
-        let emergency = didTransferEmergencyFund ? targetEmergencyFund : 0
-        let abarth = didTransferAbarthFund ? targetAbarthFund : 0
-        let hobby = didTransferHobbyFund ? targetHobbyFund : 0
-        return iit + emergency + abarth + hobby
+        routingCategories.reduce(0.0) { partial, category in
+            partial + (category.didTransfer ? category.target : 0)
+        }
     }
 
     var plannedWealthRoutingTotal: Double {
-        targetIIT + targetEmergencyFund + targetAbarthFund + targetHobbyFund
+        routingCategories.reduce(0.0) { $0 + $1.target }
     }
 
     var pendingWealthRoutingTotal: Double {
@@ -149,12 +143,16 @@ extension MonthlyReview {
     }
 
     var completedTransferCount: Int {
-        [didTransferIIT, didTransferEmergencyFund, didTransferAbarthFund, didTransferHobbyFund]
-            .filter { $0 }
-            .count
+        routingCategories.filter(\.didTransfer).count
     }
 
-    static let totalTransferCount = 4
+    var totalTransferCount: Int {
+        routingCategories.count
+    }
+
+    /// Next sort index for appending a new category to either collection.
+    func nextSpendSortOrder() -> Int { (spendCategories.map(\.sortOrder).max() ?? -1) + 1 }
+    func nextRoutingSortOrder() -> Int { (routingCategories.map(\.sortOrder).max() ?? -1) + 1 }
 
     static func monthKey(for date: Date = .now, calendar: Calendar = .current) -> String {
         let components = calendar.dateComponents([.year, .month], from: date)

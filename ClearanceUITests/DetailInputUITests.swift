@@ -89,10 +89,9 @@ final class DetailInputUITests: ClearanceUITestCase {
         // Force a deficit: tiny income, large actual card spend.
         setField("Income", to: "1000")
         setField("Rent", to: "0")
-        setField("Mizrahi Target", to: "5000")
-        setField("Actual Mizrahi", to: "5000")
-        setField("1824 Target", to: "5000")
-        setField("Actual 1824", to: "5000")
+        // Spend categories (from the template) are labeled "<name> Target" / "<name> Actual".
+        setField("Mizrahi Actual", to: "5000")
+        setField("1824 Actual", to: "5000")
         snapshot(name: "deficit-buffer")
         // The buffer hero is a single combined accessibility element ("Remaining buffer")
         // whose value includes the status, so query the combined element rather than a
@@ -135,5 +134,56 @@ final class DetailInputUITests: ClearanceUITestCase {
         snapshot(name: "amount-fields")
         let collisions = app.textFields.matching(identifier: "Amount").count
         XCTAssertEqual(collisions, 0, "No amount field should use the generic label 'Amount' (found \(collisions))")
+    }
+
+    // MARK: - Customizable categories
+
+    private func transferCheckboxes() -> [XCUIElement] {
+        app.checkBoxes.allElementsBoundByIndex.filter { $0.label.hasPrefix("Mark ") }
+    }
+
+    func test_carFundIsDefaultRoutingCategory() throws {
+        // The Abarth → "Car fund" rename: a fresh month (from the template) includes a Car fund.
+        XCTAssertTrue(
+            app.checkBoxes["Mark Car fund transferred"].waitForExistence(timeout: 5),
+            "A new month should include the default 'Car fund' routing category"
+        )
+    }
+
+    func test_addFund_appendsRoutingRow() throws {
+        let before = transferCheckboxes().count
+        XCTAssertGreaterThan(before, 0, "Template should seed routing funds")
+        let addButton = app.buttons["Add fund"]
+        XCTAssertTrue(addButton.waitForExistence(timeout: 5), "Wealth Engine should offer an Add fund button")
+        addButton.click()
+        snapshot(name: "after-add-fund")
+        // A new "New fund" row should appear, raising the routing count by one.
+        XCTAssertTrue(
+            app.checkBoxes["Mark New fund transferred"].waitForExistence(timeout: 3),
+            "Adding a fund should append a 'New fund' row"
+        )
+        XCTAssertEqual(transferCheckboxes().count, before + 1)
+    }
+
+    func test_removeFund_viaHoverTrashAndConfirm() throws {
+        let hobby = app.checkBoxes["Mark Hobby Keren Kaspit transferred"]
+        guard hobby.waitForExistence(timeout: 5) else {
+            throw XCTSkip("Hobby fund not present to remove")
+        }
+        // Reveal the row's remove control by hovering, then remove and confirm.
+        hobby.hover()
+        let remove = app.buttons["Remove Hobby Keren Kaspit"]
+        guard remove.waitForExistence(timeout: 3) else {
+            throw XCTSkip("Hover-revealed remove control not reachable in this environment")
+        }
+        remove.click()
+        let confirm = app.buttons["Remove"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 3), "A destructive confirmation should appear")
+        snapshot(name: "remove-fund-confirm")
+        confirm.click()
+        XCTAssertFalse(
+            app.checkBoxes["Mark Hobby Keren Kaspit transferred"].waitForExistence(timeout: 3),
+            "Confirming removal should delete the fund row"
+        )
     }
 }

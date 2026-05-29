@@ -7,8 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		118BFB5541AAC9DA15436AD2 /* CategoryBackfill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57651D08565724A1BAE6F605 /* CategoryBackfill.swift */; };
 		1A4E712BC95FC383B12874A2 /* DetailInputUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D5823E68C023B05405BB4D /* DetailInputUITests.swift */; };
+		3C902C1B9DA21F3C341CA84A /* SpendCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A456FED5C618337864A834A /* SpendCategory.swift */; };
 		7CE7411CA5CD6F19CD7362D8 /* SidebarFlowsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEEF63B9171AD4582512DAA8 /* SidebarFlowsUITests.swift */; };
+		877E3E0B12AAC5A35C3E33AF /* CategoryTemplateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BEED678BBC5469D426A4300 /* CategoryTemplateStore.swift */; };
+		9CA0EFA6E88F2AEDE2B8CF20 /* RoutingCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2DF4C52B902210D9C97228F /* RoutingCategory.swift */; };
 		A00000000000000000000001 /* ClearanceApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000001 /* ClearanceApp.swift */; };
 		A00000000000000000000002 /* ClearanceAppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* ClearanceAppModel.swift */; };
 		A00000000000000000000003 /* MonthlyReview.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000003 /* MonthlyReview.swift */; };
@@ -42,8 +46,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		1A456FED5C618337864A834A /* SpendCategory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpendCategory.swift; sourceTree = "<group>"; };
+		2BEED678BBC5469D426A4300 /* CategoryTemplateStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CategoryTemplateStore.swift; sourceTree = "<group>"; };
 		40D5823E68C023B05405BB4D /* DetailInputUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DetailInputUITests.swift; sourceTree = "<group>"; };
 		4B2BEF6D1DCB69DE3ECE8EFE /* GlassSurface.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GlassSurface.swift; sourceTree = "<group>"; };
+		57651D08565724A1BAE6F605 /* CategoryBackfill.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CategoryBackfill.swift; sourceTree = "<group>"; };
 		991744E68A8E12774D879A8D /* MenusAndSettingsUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MenusAndSettingsUITests.swift; sourceTree = "<group>"; };
 		A10000000000000000000001 /* ClearanceApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearanceApp.swift; sourceTree = "<group>"; };
 		A10000000000000000000002 /* ClearanceAppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearanceAppModel.swift; sourceTree = "<group>"; };
@@ -62,6 +69,7 @@
 		A1000000000000000000000F /* AppZoomController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppZoomController.swift; sourceTree = "<group>"; };
 		A10000000000000000000010 /* AppZoomEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppZoomEnvironment.swift; sourceTree = "<group>"; };
 		A10000000000000000000011 /* RevertableInputRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RevertableInputRow.swift; sourceTree = "<group>"; };
+		C2DF4C52B902210D9C97228F /* RoutingCategory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RoutingCategory.swift; sourceTree = "<group>"; };
 		D7BB1B2864D8053283475FE9 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
 		DB3094350E8753736E545FD2 /* ClearanceUITestCase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ClearanceUITestCase.swift; sourceTree = "<group>"; };
 		DEEF63B9171AD4582512DAA8 /* SidebarFlowsUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SidebarFlowsUITests.swift; sourceTree = "<group>"; };
@@ -131,6 +139,8 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000003 /* MonthlyReview.swift */,
+				1A456FED5C618337864A834A /* SpendCategory.swift */,
+				C2DF4C52B902210D9C97228F /* RoutingCategory.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -158,6 +168,8 @@
 				A10000000000000000000010 /* AppZoomEnvironment.swift */,
 				A10000000000000000000011 /* RevertableInputRow.swift */,
 				4B2BEF6D1DCB69DE3ECE8EFE /* GlassSurface.swift */,
+				2BEED678BBC5469D426A4300 /* CategoryTemplateStore.swift */,
+				57651D08565724A1BAE6F605 /* CategoryBackfill.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -312,6 +324,10 @@
 				A0000000000000000000000F /* AppZoomEnvironment.swift in Sources */,
 				A00000000000000000000010 /* RevertableInputRow.swift in Sources */,
 				FB5F51311915099A0F2D2412 /* GlassSurface.swift in Sources */,
+				3C902C1B9DA21F3C341CA84A /* SpendCategory.swift in Sources */,
+				9CA0EFA6E88F2AEDE2B8CF20 /* RoutingCategory.swift in Sources */,
+				877E3E0B12AAC5A35C3E33AF /* CategoryTemplateStore.swift in Sources */,
+				118BFB5541AAC9DA15436AD2 /* CategoryBackfill.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
