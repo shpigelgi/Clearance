@@ -49,6 +49,7 @@ struct ClearanceApp: App {
         Settings {
             SettingsView()
                 .environmentObject(templateStore)
+                .modelContainer(appModel.modelContainer)
         }
     }
 }
