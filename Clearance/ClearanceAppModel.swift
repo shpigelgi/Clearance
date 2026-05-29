@@ -23,8 +23,10 @@ final class ClearanceAppModel: ObservableObject {
             modelContainer = container
             exportManager = DataExportManager(modelContainer: container)
 
-            // Seed dynamic categories for any pre-existing months (idempotent, non-destructive).
+            // Seed dynamic categories for any pre-existing months (idempotent, non-destructive),
+            // then establish the persistent Fund list and link routing rows to it.
             CategoryBackfill.run(in: container.mainContext)
+            FundMigration.run(in: container.mainContext)
         } catch {
             fatalError("Unable to create SwiftData model container: \(error)")
         }

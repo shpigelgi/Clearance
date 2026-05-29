@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0BA0DD44492EB66471CEC027 /* FundMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20304FBC5B09CEA16457EE45 /* FundMigration.swift */; };
 		118BFB5541AAC9DA15436AD2 /* CategoryBackfill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57651D08565724A1BAE6F605 /* CategoryBackfill.swift */; };
 		1A4E712BC95FC383B12874A2 /* DetailInputUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D5823E68C023B05405BB4D /* DetailInputUITests.swift */; };
 		3C902C1B9DA21F3C341CA84A /* SpendCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A456FED5C618337864A834A /* SpendCategory.swift */; };
@@ -49,6 +50,7 @@
 
 /* Begin PBXFileReference section */
 		1A456FED5C618337864A834A /* SpendCategory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpendCategory.swift; sourceTree = "<group>"; };
+		20304FBC5B09CEA16457EE45 /* FundMigration.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FundMigration.swift; sourceTree = "<group>"; };
 		2BEED678BBC5469D426A4300 /* CategoryTemplateStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CategoryTemplateStore.swift; sourceTree = "<group>"; };
 		40D5823E68C023B05405BB4D /* DetailInputUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DetailInputUITests.swift; sourceTree = "<group>"; };
 		4B2BEF6D1DCB69DE3ECE8EFE /* GlassSurface.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GlassSurface.swift; sourceTree = "<group>"; };
@@ -176,6 +178,7 @@
 				2BEED678BBC5469D426A4300 /* CategoryTemplateStore.swift */,
 				57651D08565724A1BAE6F605 /* CategoryBackfill.swift */,
 				AA0B7291060E5D9A5AEF60E7 /* FundLedger.swift */,
+				20304FBC5B09CEA16457EE45 /* FundMigration.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -336,6 +339,7 @@
 				118BFB5541AAC9DA15436AD2 /* CategoryBackfill.swift in Sources */,
 				EC20877B269E33B0686471FD /* Fund.swift in Sources */,
 				4536F9A53F1162CFE2BE5B5C /* FundLedger.swift in Sources */,
+				0BA0DD44492EB66471CEC027 /* FundMigration.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

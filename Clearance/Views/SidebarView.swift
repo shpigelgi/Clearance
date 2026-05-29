@@ -7,6 +7,9 @@ struct SidebarView: View {
     @Query(sort: [SortDescriptor(\MonthlyReview.monthKey, order: .reverse)])
     private var reviews: [MonthlyReview]
 
+    @Query(sort: [SortDescriptor(\Fund.sortOrder)])
+    private var funds: [Fund]
+
     @Binding var selection: String?
 
     @AppStorage(ClearanceSettings.incomeKey) private var income = ClearanceSettings.defaultIncome
@@ -121,12 +124,13 @@ struct SidebarView: View {
             baselineWorkDays: baselineWorkDays
         )
 
-        // New months inherit the user's category template (Settings).
+        // New months inherit spend categories from the template and one routing contribution
+        // per active Fund (snapshotting the fund's current name/rate, linked by fundID).
         let spend = templateStore.spend.enumerated().map { index, template in
             SpendCategory(name: template.name, target: template.target, actual: template.target, sortOrder: index)
         }
-        let routing = templateStore.routing.enumerated().map { index, template in
-            RoutingCategory(name: template.name, target: template.target, annualRate: template.annualRate, sortOrder: index)
+        let routing = funds.filter { !$0.archived }.enumerated().map { index, fund in
+            RoutingCategory(name: fund.name, target: fund.defaultContribution, annualRate: fund.defaultRate, sortOrder: index, fundID: fund.id)
         }
 
         modelContext.insert(review)
