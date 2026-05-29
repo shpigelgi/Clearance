@@ -11,6 +11,10 @@ class ClearanceUITestCase: XCTestCase {
         app = XCUIApplication()
         app.launchEnvironment["CLEARANCE_UITEST_INMEMORY"] = "1"
         app.launch()
+        // Ensure the app is frontmost/key before any keystrokes (⌘A, ⌘,) are sent;
+        // otherwise early modifier keystrokes can be dropped right after launch.
+        app.activate()
+        _ = app.windows.firstMatch.waitForExistence(timeout: 10)
     }
 
     override func tearDownWithError() throws {

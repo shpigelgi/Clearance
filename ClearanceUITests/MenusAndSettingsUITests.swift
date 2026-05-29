@@ -47,8 +47,22 @@ final class MenusAndSettingsUITests: ClearanceUITestCase {
     }
 
     func test_settingsWindow_opensWithFields() throws {
-        // ⌘, opens the Settings scene in its own window ("Clearance Settings").
-        app.typeKey(",", modifierFlags: .command)
+        // Open Settings via the app menu (more reliable than the ⌘, keystroke, which can
+        // be dropped right after launch). Falls back to ⌘, if the menu item isn't found.
+        let menuBar = app.menuBars.firstMatch
+        let appMenu = menuBar.menuBarItems["Clearance"]
+        if appMenu.waitForExistence(timeout: 5) {
+            appMenu.click()
+            let settingsItem = app.menuItems["Settings…"]
+            if settingsItem.waitForExistence(timeout: 3) {
+                settingsItem.click()
+            } else {
+                app.typeKey(.escape, modifierFlags: [])
+                app.typeKey(",", modifierFlags: .command)
+            }
+        } else {
+            app.typeKey(",", modifierFlags: .command)
+        }
         let settings = app.windows["Clearance Settings"]
         XCTAssertTrue(settings.waitForExistence(timeout: 5), "Settings window should open")
         snapshot(name: "settings-window")

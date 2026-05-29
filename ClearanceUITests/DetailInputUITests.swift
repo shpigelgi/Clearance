@@ -11,16 +11,39 @@ final class DetailInputUITests: ClearanceUITestCase {
         if start.waitForExistence(timeout: 10) { start.click() }
     }
 
-    /// Type a value into a labeled financial field (select-all + replace).
-    private func setField(_ label: String, to text: String, file: StaticString = #filePath, line: UInt = #line) {
+    /// Type a value into a labeled financial field, clearing any existing/default value first.
+    /// Self-verifying: ⌘A select-all is unreliable in these formatter-backed number fields, and
+    /// under load the clear can race (the typed text gets prepended: "1000"+"10000" = 100,010,000).
+    /// So we clear by moving to the end and backspacing the full length, then read the field back
+    /// and retry until the field's digits match what we typed.
+    /// Set `verifyNumeric: false` for adversarial garbage input (e.g. "abc!@#"), where the
+    /// formatter is expected to reject the value, so reading the digits back won't match.
+    private func setField(_ label: String, to text: String, verifyNumeric: Bool = true,
+                          file: StaticString = #filePath, line: UInt = #line) {
         let field = app.textFields[label]
         guard field.waitForExistence(timeout: 5) else {
             XCTFail("Text field '\(label)' not found", file: file, line: line)
             return
         }
-        field.click()
-        field.typeKey("a", modifierFlags: .command)
-        field.typeText(text + "\n")
+        let wantDigits = text.filter { $0.isNumber || $0 == "-" }
+        let attempts = verifyNumeric ? 3 : 1
+        for attempt in 1...attempts {
+            field.click()
+            Thread.sleep(forTimeInterval: 0.25)
+            let existing = (field.value as? String) ?? ""
+            let clearCount = max(existing.count + 2, 4)
+            for _ in 0..<clearCount { app.typeKey(.rightArrow, modifierFlags: []) }
+            for _ in 0..<clearCount { app.typeKey(.delete, modifierFlags: []) }
+            app.typeText(text)
+            app.typeKey(.return, modifierFlags: [])
+            guard verifyNumeric else { return }
+            Thread.sleep(forTimeInterval: 0.15)
+            let after = ((field.value as? String) ?? "").filter { $0.isNumber || $0 == "-" }
+            if after == wantDigits { return }
+            if attempt == attempts {
+                XCTFail("Field '\(label)' did not accept '\(text)' (got '\(after)')", file: file, line: line)
+            }
+        }
     }
 
     func test_negativeIncome_isHandledGracefully() throws {
@@ -39,7 +62,7 @@ final class DetailInputUITests: ClearanceUITestCase {
 
     func test_nonNumericText_rejectedOrIgnored() throws {
         // Formatters.number parsing should reject letters; the field must not crash.
-        setField("Rent", to: "abc!@#")
+        setField("Rent", to: "abc!@#", verifyNumeric: false)
         snapshot(name: "non-numeric-rent")
         XCTAssertTrue(app.windows.firstMatch.exists, "Garbage text input must not crash the app")
     }
@@ -71,10 +94,15 @@ final class DetailInputUITests: ClearanceUITestCase {
         setField("1824 Target", to: "5000")
         setField("Actual 1824", to: "5000")
         snapshot(name: "deficit-buffer")
-        // The UI labels a deficit as "Deficit buffer".
+        // The buffer hero is a single combined accessibility element ("Remaining buffer")
+        // whose value includes the status, so query the combined element rather than a
+        // standalone "Deficit buffer" StaticText.
+        let buffer = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label == %@", "Remaining buffer")).firstMatch
+        XCTAssertTrue(buffer.waitForExistence(timeout: 3), "Buffer hero element should exist")
         XCTAssertTrue(
-            app.staticTexts["Deficit buffer"].waitForExistence(timeout: 3),
-            "A negative remaining buffer should show the 'Deficit buffer' status"
+            (buffer.value as? String ?? "").contains("Deficit"),
+            "A negative remaining buffer should report a Deficit status (got '\(buffer.value as? String ?? "")')"
         )
     }
 
