@@ -9,7 +9,7 @@ final class ClearanceAppModel: ObservableObject {
 
     init() {
         do {
-            let schema = Schema([MonthlyReview.self, SpendCategory.self, RoutingCategory.self])
+            let schema = Schema([MonthlyReview.self, SpendCategory.self, RoutingCategory.self, Fund.self])
             // UI tests launch with CLEARANCE_UITEST_INMEMORY=1 so the suite runs
             // against a throwaway in-memory store and never touches real data.
             let inMemoryOnly = ProcessInfo.processInfo.environment["CLEARANCE_UITEST_INMEMORY"] == "1"
