@@ -6,12 +6,14 @@ import SwiftUI
 struct ClearanceApp: App {
     @StateObject private var appModel = ClearanceAppModel()
     @StateObject private var zoomController = AppZoomController()
+    @StateObject private var templateStore = CategoryTemplateStore()
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .dynamicTypeSize(zoomController.dynamicTypeSize)
                 .environment(\.appZoomScale, zoomController.scale)
+                .environmentObject(templateStore)
         }
         .modelContainer(appModel.modelContainer)
         .defaultSize(width: 1120, height: 780)
@@ -46,6 +48,7 @@ struct ClearanceApp: App {
 
         Settings {
             SettingsView()
+                .environmentObject(templateStore)
         }
     }
 }

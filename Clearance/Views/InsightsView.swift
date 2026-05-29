@@ -105,8 +105,8 @@ struct InsightsView: View {
 
     private var rollingAverageTile: some View {
         MetricTile(
-            title: "Rolling 1824 Average",
-            value: viewModel.rollingAverage1824.formatted(Formatters.currency),
+            title: "Rolling Spend Average",
+            value: viewModel.rollingSpendAverage.formatted(Formatters.currency),
             subtitle: "Last \(viewModel.recentThree.count) month\(viewModel.recentThree.count == 1 ? "" : "s")"
         )
     }

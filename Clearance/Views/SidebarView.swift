@@ -12,18 +12,8 @@ struct SidebarView: View {
     @AppStorage(ClearanceSettings.incomeKey) private var income = ClearanceSettings.defaultIncome
     @AppStorage(ClearanceSettings.baselineWorkDaysKey) private var baselineWorkDays = ClearanceSettings.defaultBaselineWorkDays
     @AppStorage(ClearanceSettings.rentKey) private var rent = ClearanceSettings.defaultRent
-    @AppStorage(ClearanceSettings.targetMizrahiKey) private var targetMizrahi = ClearanceSettings.defaultTargetMizrahi
-    @AppStorage(ClearanceSettings.target1824Key) private var target1824 = ClearanceSettings.defaultTarget1824
-    @AppStorage(ClearanceSettings.targetIITKey) private var targetIIT = ClearanceSettings.defaultTargetIIT
-    @AppStorage(ClearanceSettings.targetEmergencyFundKey) private var targetEmergencyFund = ClearanceSettings.defaultTargetEmergencyFund
-    @AppStorage(ClearanceSettings.targetAbarthFundKey) private var targetAbarthFund = ClearanceSettings.defaultTargetAbarthFund
-    @AppStorage(ClearanceSettings.targetHobbyFundKey) private var targetHobbyFund = ClearanceSettings.defaultTargetHobbyFund
-    @AppStorage(ClearanceSettings.iitTransferNameKey) private var iitTransferName = ClearanceSettings.defaultIITTransferName
-    @AppStorage(ClearanceSettings.emergencyFundNameKey) private var emergencyFundName = ClearanceSettings.defaultEmergencyFundName
-    @AppStorage(ClearanceSettings.abarthFundNameKey) private var abarthFundName = ClearanceSettings.defaultAbarthFundName
-    @AppStorage(ClearanceSettings.hobbyFundNameKey) private var hobbyFundName = ClearanceSettings.defaultHobbyFundName
-    @AppStorage(ClearanceSettings.iitAnnualRateKey) private var iitAnnualRate = ClearanceSettings.defaultIITAnnualRate
-    @AppStorage(ClearanceSettings.kerenAnnualRateKey) private var kerenAnnualRate = ClearanceSettings.defaultKerenAnnualRate
+
+    @EnvironmentObject private var templateStore: CategoryTemplateStore
 
     @State private var isAddingMonth = false
     @State private var retroactiveMonth = Calendar.current.component(.month, from: .now)
@@ -128,22 +118,22 @@ struct SidebarView: View {
             monthKey: monthKey,
             income: income,
             rent: rent,
-            targetMizrahi: targetMizrahi,
-            target1824: target1824,
-            targetIIT: targetIIT,
-            targetEmergencyFund: targetEmergencyFund,
-            targetAbarthFund: targetAbarthFund,
-            targetHobbyFund: targetHobbyFund,
-            iitTransferName: iitTransferName,
-            emergencyFundName: emergencyFundName,
-            abarthFundName: abarthFundName,
-            hobbyFundName: hobbyFundName,
-            iitAnnualRate: iitAnnualRate,
-            kerenAnnualRate: kerenAnnualRate,
             baselineWorkDays: baselineWorkDays
         )
 
+        // New months inherit the user's category template (Settings).
+        let spend = templateStore.spend.enumerated().map { index, template in
+            SpendCategory(name: template.name, target: template.target, actual: template.target, sortOrder: index)
+        }
+        let routing = templateStore.routing.enumerated().map { index, template in
+            RoutingCategory(name: template.name, target: template.target, annualRate: template.annualRate, sortOrder: index)
+        }
+
         modelContext.insert(review)
+        spend.forEach(modelContext.insert)
+        routing.forEach(modelContext.insert)
+        review.spendCategories = spend
+        review.routingCategories = routing
 
         do {
             try modelContext.save()

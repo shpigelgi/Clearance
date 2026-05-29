@@ -3,26 +3,14 @@ import SwiftUI
 
 struct MonthDetailView: View {
     @Environment(\.appZoomScale) private var appZoomScale
+    @Environment(\.modelContext) private var modelContext
     @Bindable var review: MonthlyReview
     @FocusState private var focusedField: EntryField?
-    @State private var hoveredTransferName: TransferName?
-    @State private var editingTransferName: TransferName?
+    @State private var pendingDeletion: PendingDeletion?
 
     @AppStorage(ClearanceSettings.incomeKey) private var settingsIncome = ClearanceSettings.defaultIncome
     @AppStorage(ClearanceSettings.baselineWorkDaysKey) private var settingsBaselineWorkDays = ClearanceSettings.defaultBaselineWorkDays
     @AppStorage(ClearanceSettings.rentKey) private var settingsRent = ClearanceSettings.defaultRent
-    @AppStorage(ClearanceSettings.targetMizrahiKey) private var settingsTargetMizrahi = ClearanceSettings.defaultTargetMizrahi
-    @AppStorage(ClearanceSettings.target1824Key) private var settingsTarget1824 = ClearanceSettings.defaultTarget1824
-    @AppStorage(ClearanceSettings.targetIITKey) private var settingsTargetIIT = ClearanceSettings.defaultTargetIIT
-    @AppStorage(ClearanceSettings.targetEmergencyFundKey) private var settingsTargetEmergencyFund = ClearanceSettings.defaultTargetEmergencyFund
-    @AppStorage(ClearanceSettings.targetAbarthFundKey) private var settingsTargetAbarthFund = ClearanceSettings.defaultTargetAbarthFund
-    @AppStorage(ClearanceSettings.targetHobbyFundKey) private var settingsTargetHobbyFund = ClearanceSettings.defaultTargetHobbyFund
-    @AppStorage(ClearanceSettings.iitTransferNameKey) private var settingsIITTransferName = ClearanceSettings.defaultIITTransferName
-    @AppStorage(ClearanceSettings.emergencyFundNameKey) private var settingsEmergencyFundName = ClearanceSettings.defaultEmergencyFundName
-    @AppStorage(ClearanceSettings.abarthFundNameKey) private var settingsAbarthFundName = ClearanceSettings.defaultAbarthFundName
-    @AppStorage(ClearanceSettings.hobbyFundNameKey) private var settingsHobbyFundName = ClearanceSettings.defaultHobbyFundName
-    @AppStorage(ClearanceSettings.iitAnnualRateKey) private var settingsIITAnnualRate = ClearanceSettings.defaultIITAnnualRate
-    @AppStorage(ClearanceSettings.kerenAnnualRateKey) private var settingsKerenAnnualRate = ClearanceSettings.defaultKerenAnnualRate
 
     private var settingsIncomePerWorkday: Double {
         guard settingsBaselineWorkDays > 0 else { return 0 }
@@ -35,23 +23,13 @@ struct MonthDetailView: View {
         case incomePerWorkday
         case rent
         case baselineWorkDays
-        case targetMizrahi
-        case target1824
-        case targetIIT
-        case targetEmergencyFund
-        case targetAbarthFund
-        case targetHobbyFund
-        case iitAnnualRate
-        case kerenAnnualRate
-        case actualMizrahi
-        case actual1824
     }
 
-    private enum TransferName: Hashable {
-        case iit
-        case emergency
-        case abarth
-        case hobby
+    /// A queued category removal, surfaced as a destructive confirmation alert.
+    private struct PendingDeletion: Identifiable {
+        let id = UUID()
+        let name: String
+        let perform: () -> Void
     }
 
     var body: some View {
@@ -70,6 +48,14 @@ struct MonthDetailView: View {
         .background(Color(nsColor: .windowBackgroundColor))
         .onAppear {
             focusedField = review.calculatesIncomeFromDays ? .daysWorked : .income
+        }
+        .alert(item: $pendingDeletion) { deletion in
+            Alert(
+                title: Text("Remove \(deletion.name)?"),
+                message: Text("This removes the category from \(Formatters.monthTitle(from: review.monthKey)) only. Other months are unaffected."),
+                primaryButton: .destructive(Text("Remove"), action: deletion.perform),
+                secondaryButton: .cancel()
+            )
         }
     }
 
@@ -162,131 +148,93 @@ struct MonthDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    // MARK: - Clearance Check
+
     private var clearanceCheckSection: some View {
         ReviewCard(title: "The Clearance Check", systemImage: "checkmark.seal") {
-            Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: zoomed(14), verticalSpacing: zoomed(12)) {
-                GridRow {
-                    formLabel("Income Mode")
-                    Toggle("Calculate from days worked", isOn: incomeModeBinding)
-                        .toggleStyle(.checkbox)
-                        .gridColumnAlignment(.leading)
-                }
-
-                if review.calculatesIncomeFromDays {
+            VStack(alignment: .leading, spacing: zoomed(14)) {
+                Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: zoomed(14), verticalSpacing: zoomed(12)) {
                     GridRow {
-                        formLabel("Baseline Work Days")
-                        numberField(
-                            title: "Baseline Work Days",
-                            value: $review.baselineWorkDays,
-                            field: .baselineWorkDays,
-                            width: 112,
-                            defaultValue: settingsBaselineWorkDays
-                        )
+                        formLabel("Income Mode")
+                        Toggle("Calculate from days worked", isOn: incomeModeBinding)
+                            .toggleStyle(.checkbox)
+                            .gridColumnAlignment(.leading)
+                    }
+
+                    if review.calculatesIncomeFromDays {
+                        GridRow {
+                            formLabel("Baseline Work Days")
+                            numberField(title: "Baseline Work Days", value: $review.baselineWorkDays, field: .baselineWorkDays, width: 112, defaultValue: settingsBaselineWorkDays)
+                        }
+                        GridRow {
+                            formLabel("Days Worked", detail: "Baseline \(review.baselineWorkDays.formatted(Formatters.number))")
+                            numberField(title: "Days Worked", value: $review.daysWorked, field: .daysWorked, defaultValue: review.baselineWorkDays)
+                        }
+                        GridRow {
+                            formLabel("Income Per Day")
+                            numberField(title: "Income Per Day", value: $review.incomePerWorkday, field: .incomePerWorkday, defaultValue: settingsIncomePerWorkday)
+                        }
+                    } else {
+                        GridRow {
+                            formLabel("Income")
+                            numberField(title: "Income", value: $review.income, field: .income, defaultValue: settingsIncome)
+                        }
                     }
 
                     GridRow {
-                        formLabel("Days Worked", detail: "Baseline \(review.baselineWorkDays.formatted(Formatters.number))")
-                        numberField(
-                            title: "Days Worked",
-                            value: $review.daysWorked,
-                            field: .daysWorked,
-                            defaultValue: review.baselineWorkDays
-                        )
+                        formLabel("Rent")
+                        numberField(title: "Rent", value: $review.rent, field: .rent, defaultValue: settingsRent)
                     }
-
-                    GridRow {
-                        formLabel("Income Per Day")
-                        numberField(
-                            title: "Income Per Day",
-                            value: $review.incomePerWorkday,
-                            field: .incomePerWorkday,
-                            defaultValue: settingsIncomePerWorkday
-                        )
-                    }
-                } else {
-                    GridRow {
-                        formLabel("Income")
-                        numberField(title: "Income", value: $review.income, field: .income, defaultValue: settingsIncome)
-                    }
-                }
-
-                GridRow {
-                    formLabel("Rent")
-                    numberField(title: "Rent", value: $review.rent, field: .rent, defaultValue: settingsRent)
                 }
 
                 Divider()
-                    .gridCellColumns(2)
 
-                GridRow {
-                    formLabel("Mizrahi Target")
-                    numberField(
-                        title: "Mizrahi Target",
-                        value: $review.targetMizrahi,
-                        field: .targetMizrahi,
-                        defaultValue: settingsTargetMizrahi
-                    )
-                }
-
-                GridRow {
-                    formLabel("Actual Mizrahi")
-                    numberField(
-                        title: "Actual Mizrahi",
-                        value: $review.actualMizrahi,
-                        field: .actualMizrahi,
-                        defaultValue: review.targetMizrahi
-                    )
-                }
-
-                GridRow {
-                    formLabel("1824 Target")
-                    numberField(
-                        title: "1824 Target",
-                        value: $review.target1824,
-                        field: .target1824,
-                        defaultValue: settingsTarget1824
-                    )
-                }
-
-                GridRow {
-                    formLabel("Actual 1824")
-                    numberField(
-                        title: "Actual 1824",
-                        value: $review.actual1824,
-                        field: .actual1824,
-                        defaultValue: review.target1824
-                    )
+                // Dynamic card-spend categories.
+                VStack(alignment: .leading, spacing: zoomed(8)) {
+                    sectionCaption("Card Spend")
+                    if review.spendCategories.isEmpty {
+                        emptyHint("No spend categories yet — add one to track card spend.")
+                    } else {
+                        ForEach(review.sortedSpendCategories) { category in
+                            SpendCategoryRow(category: category) {
+                                requestRemoval(of: category.name) { delete(spend: category) }
+                            }
+                        }
+                    }
+                    AddCategoryButton(title: "Add spend category", action: addSpendCategory)
                 }
 
                 Divider()
-                    .gridCellColumns(2)
 
-                GridRow {
-                    formLabel("Remaining Buffer", detail: "Income - rent - actual card spend")
-                    VStack(alignment: .leading, spacing: zoomed(4)) {
-                        Text(review.remainingBuffer, format: Formatters.currency)
-                            .font(.system(.title, design: .rounded, weight: .bold))
-                            .monospacedDigit()
-                            .foregroundStyle(bufferStatusColor)
-                        Label(bufferStatusLabel, systemImage: bufferStatusSystemImage)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(bufferStatusColor)
-                    }
-                    .frame(maxWidth: zoomed(180), alignment: .leading)
-                    .padding(zoomed(12))
-                    .background {
-                        // Subtle state-reactive wash behind the bold colored number. (A tinted
-                        // glassEffect renders near-solid and makes the same-colored text
-                        // unreadable, so use a faint fill instead and keep glass for the cards.)
-                        RoundedRectangle(cornerRadius: zoomed(16), style: .continuous)
-                            .fill(bufferStatusColor.opacity(0.12))
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel("Remaining buffer")
-                    .accessibilityValue("\(review.remainingBuffer.formatted(Formatters.currency)), \(bufferStatusLabel)")
-                }
+                bufferHero
             }
             .frame(maxWidth: zoomed(560), alignment: .leading)
+        }
+    }
+
+    private var bufferHero: some View {
+        HStack(alignment: .top, spacing: zoomed(14)) {
+            formLabel("Remaining Buffer", detail: "Income - rent - actual card spend")
+            VStack(alignment: .leading, spacing: zoomed(4)) {
+                Text(review.remainingBuffer, format: Formatters.currency)
+                    .font(.system(.title, design: .rounded, weight: .bold))
+                    .monospacedDigit()
+                    .foregroundStyle(bufferStatusColor)
+                Label(bufferStatusLabel, systemImage: bufferStatusSystemImage)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(bufferStatusColor)
+            }
+            .frame(maxWidth: zoomed(180), alignment: .leading)
+            .padding(zoomed(12))
+            .background {
+                RoundedRectangle(cornerRadius: zoomed(16), style: .continuous)
+                    .fill(bufferStatusColor.opacity(0.12))
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Remaining buffer")
+            .accessibilityValue("\(review.remainingBuffer.formatted(Formatters.currency)), \(bufferStatusLabel)")
+
+            Spacer(minLength: 0)
         }
     }
 
@@ -320,140 +268,34 @@ struct MonthDetailView: View {
         if review.baselineWorkDays <= 0 {
             review.baselineWorkDays = ClearanceSettings.defaultBaselineWorkDays
         }
-
         if review.daysWorked <= 0 {
             review.daysWorked = review.baselineWorkDays
         }
-
         if review.incomePerWorkday <= 0, review.baselineWorkDays > 0 {
             review.incomePerWorkday = review.income / review.baselineWorkDays
         }
     }
 
-    private func inputLabel(title: String, subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: zoomed(3)) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-            Text(subtitle)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private func formLabel(_ title: String, detail: String? = nil) -> some View {
-        VStack(alignment: .trailing, spacing: zoomed(3)) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-
-            if let detail {
-                Text(detail)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .frame(width: zoomed(150), alignment: .trailing)
-        .gridColumnAlignment(.trailing)
-    }
-
-    private func numberField(
-        title: String,
-        value: Binding<Double>,
-        field: EntryField,
-        width: CGFloat = 100,
-        defaultValue: Double
-    ) -> some View {
-        RevertableInputRow(
-            title: title,
-            isDefault: ValueComparison.approximatelyEqual(value.wrappedValue, defaultValue),
-            spacing: zoomed(4),
-            revert: { value.wrappedValue = defaultValue }
-        ) {
-            TextField(title, value: value, format: Formatters.number)
-                .focused($focusedField, equals: field)
-                .financialFieldStyle(width: width)
-                .accessibilityLabel(title)
-        }
-    }
-
-    private func percentField(
-        title: String,
-        value: Binding<Double>,
-        field: EntryField,
-        width: CGFloat,
-        defaultValue: Double
-    ) -> some View {
-        RevertableInputRow(
-            title: title,
-            isDefault: ValueComparison.approximatelyEqual(value.wrappedValue, defaultValue),
-            spacing: zoomed(4),
-            revert: { value.wrappedValue = defaultValue }
-        ) {
-            HStack(spacing: zoomed(6)) {
-                TextField(title, value: percentBinding(value), format: Formatters.number)
-                    .focused($focusedField, equals: field)
-                    .financialFieldStyle(width: min(width, 100))
-                    .accessibilityLabel(title)
-
-                Text("%")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    private func percentBinding(_ value: Binding<Double>) -> Binding<Double> {
-        Binding {
-            value.wrappedValue * 100
-        } set: { newValue in
-            value.wrappedValue = newValue / 100
-        }
-    }
+    // MARK: - Wealth Engine
 
     private var wealthEngineSection: some View {
         ReviewCard(title: "The Wealth Engine", systemImage: "arrow.triangle.2.circlepath") {
             VStack(alignment: .leading, spacing: zoomed(12)) {
-                transferConfigRow(
-                    id: .iit,
-                    name: $review.iitTransferName,
-                    defaultName: settingsIITTransferName,
-                    amount: $review.targetIIT,
-                    defaultAmount: settingsTargetIIT,
-                    field: .targetIIT,
-                    isOn: $review.didTransferIIT
-                )
-
-                transferConfigRow(
-                    id: .emergency,
-                    name: $review.emergencyFundName,
-                    defaultName: settingsEmergencyFundName,
-                    amount: $review.targetEmergencyFund,
-                    defaultAmount: settingsTargetEmergencyFund,
-                    field: .targetEmergencyFund,
-                    isOn: $review.didTransferEmergencyFund
-                )
-
-                transferConfigRow(
-                    id: .abarth,
-                    name: $review.abarthFundName,
-                    defaultName: settingsAbarthFundName,
-                    amount: $review.targetAbarthFund,
-                    defaultAmount: settingsTargetAbarthFund,
-                    field: .targetAbarthFund,
-                    isOn: $review.didTransferAbarthFund
-                )
-
-                transferConfigRow(
-                    id: .hobby,
-                    name: $review.hobbyFundName,
-                    defaultName: settingsHobbyFundName,
-                    amount: $review.targetHobbyFund,
-                    defaultAmount: settingsTargetHobbyFund,
-                    field: .targetHobbyFund,
-                    isOn: $review.didTransferHobbyFund
-                )
+                if review.routingCategories.isEmpty {
+                    emptyHint("No funds yet — add one to start routing.")
+                } else {
+                    ForEach(review.sortedRoutingCategories) { category in
+                        RoutingCategoryRow(category: category) {
+                            requestRemoval(of: category.name) { delete(routing: category) }
+                        }
+                    }
+                }
+                AddCategoryButton(title: "Add fund", action: addRoutingCategory)
             }
         }
     }
+
+    // MARK: - Month Routing summary
 
     private var monthRoutingSummarySection: some View {
         ReviewCard(title: "Month Routing", systemImage: "arrow.right.circle") {
@@ -465,13 +307,11 @@ struct MonthDetailView: View {
                         ? "\(review.daysWorked.formatted(Formatters.number)) days x \(review.incomePerWorkday.formatted(Formatters.currency))"
                         : "Manual income entry for this month"
                 )
-
                 summaryMetricRow(
                     title: "Planned Wealth Routing",
                     value: review.plannedWealthRoutingTotal.formatted(Formatters.currency),
                     detail: "Sum of this month's transfer targets"
                 )
-
                 summaryMetricRow(
                     title: "Confirmed Transfers",
                     value: review.totalWealthRouted.formatted(Formatters.currency),
@@ -485,18 +325,17 @@ struct MonthDetailView: View {
                         Text("Transfer Progress")
                             .font(.subheadline.weight(.semibold))
                         Spacer()
-                        Text("\(review.completedTransferCount) of \(MonthlyReview.totalTransferCount) complete")
+                        Text("\(review.completedTransferCount) of \(review.totalTransferCount) complete")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-
                     ProgressView(
                         value: Double(review.completedTransferCount),
-                        total: Double(MonthlyReview.totalTransferCount)
+                        total: Double(max(review.totalTransferCount, 1))
                     )
                     .progressViewStyle(.linear)
                     .accessibilityLabel("Transfer progress")
-                    .accessibilityValue("\(review.completedTransferCount) of \(MonthlyReview.totalTransferCount) complete")
+                    .accessibilityValue("\(review.completedTransferCount) of \(review.totalTransferCount) complete")
                 }
             }
         }
@@ -523,126 +362,18 @@ struct MonthDetailView: View {
         }
     }
 
-    private func transferConfigRow(
-        id: TransferName,
-        name: Binding<String>,
-        defaultName: String,
-        amount: Binding<Double>,
-        defaultAmount: Double,
-        field: EntryField,
-        isOn: Binding<Bool>
-    ) -> some View {
-        let displayName = name.wrappedValue.isEmpty ? defaultName : name.wrappedValue
-
-        return HStack(spacing: zoomed(10)) {
-            HStack(spacing: zoomed(8)) {
-                Toggle(isOn: isOn) {
-                    Text("Mark \(displayName) transferred")
-                }
-                    .toggleStyle(.checkbox)
-                    .labelsHidden()
-                    .accessibilityLabel("Mark \(displayName) transferred")
-                    .help("Mark \(displayName) transferred")
-
-                transferNameEditor(id: id, name: name, defaultName: defaultName)
-                    .frame(width: zoomed(210), alignment: .leading)
-
-                numberField(title: "\(displayName) amount", value: amount, field: field, defaultValue: defaultAmount)
-            }
-            .frame(maxWidth: zoomed(330), alignment: .leading)
-
-            Spacer(minLength: 0)
-        }
-        .padding(.vertical, zoomed(8))
-        .padding(.horizontal, zoomed(10))
-        .frame(maxWidth: zoomed(560), alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: zoomed(14), style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.58))
-        }
-        .onHover { isHovering in
-            hoveredTransferName = isHovering ? id : (hoveredTransferName == id ? nil : hoveredTransferName)
-        }
-    }
-
-    private func transferNameEditor(
-        id: TransferName,
-        name: Binding<String>,
-        defaultName: String
-    ) -> some View {
-        HStack(spacing: zoomed(6)) {
-            if editingTransferName == id {
-                TextField(defaultName, text: name)
-                    .textFieldStyle(.plain)
-                    .font(.subheadline.weight(.semibold))
-                    .frame(maxWidth: zoomed(160), alignment: .leading)
-                    .onSubmit {
-                        editingTransferName = nil
-                    }
-            } else {
-                Text(name.wrappedValue.isEmpty ? defaultName : name.wrappedValue)
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
-            }
-
-            Button {
-                editingTransferName = editingTransferName == id ? nil : id
-            } label: {
-                Image(systemName: editingTransferName == id ? "checkmark.circle" : "pencil")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
-            .opacity(hoveredTransferName == id || editingTransferName == id ? 1 : 0.6)
-            .accessibilityLabel(editingTransferName == id ? "Finish Editing Transfer Name" : "Edit Transfer Name")
-            .help(editingTransferName == id ? "Finish editing transfer name" : "Edit transfer name")
-
-            RevertToDefaultButton(
-                title: "Transfer name",
-                isDefault: name.wrappedValue == defaultName
-            ) {
-                name.wrappedValue = defaultName
-                editingTransferName = nil
-            }
-            .opacity(hoveredTransferName == id || editingTransferName == id ? 1 : 0.6)
-        }
-        .frame(width: zoomed(210), alignment: .leading)
-    }
+    // MARK: - Growth Estimator
 
     private var growthEstimatorSection: some View {
         ReviewCard(title: "Growth Estimator", systemImage: "chart.line.uptrend.xyaxis") {
             VStack(alignment: .leading, spacing: zoomed(14)) {
-                ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .top, spacing: zoomed(14)) {
-                        rateInputTile(
-                            title: "\(review.resolvedIITTransferName) rate",
-                            value: $review.iitAnnualRate,
-                            field: .iitAnnualRate,
-                            defaultValue: settingsIITAnnualRate
-                        )
-
-                        rateInputTile(
-                            title: "Keren Kaspit rate",
-                            value: $review.kerenAnnualRate,
-                            field: .kerenAnnualRate,
-                            defaultValue: settingsKerenAnnualRate
-                        )
-                    }
-
-                    VStack(spacing: zoomed(12)) {
-                        rateInputTile(
-                            title: "\(review.resolvedIITTransferName) rate",
-                            value: $review.iitAnnualRate,
-                            field: .iitAnnualRate,
-                            defaultValue: settingsIITAnnualRate
-                        )
-
-                        rateInputTile(
-                            title: "Keren Kaspit rate",
-                            value: $review.kerenAnnualRate,
-                            field: .kerenAnnualRate,
-                            defaultValue: settingsKerenAnnualRate
-                        )
+                if review.routingCategories.isEmpty {
+                    emptyHint("Add a fund to project 12-month growth.")
+                } else {
+                    VStack(spacing: zoomed(10)) {
+                        ForEach(review.sortedRoutingCategories) { category in
+                            RateRow(category: category)
+                        }
                     }
                 }
 
@@ -654,35 +385,12 @@ struct MonthDetailView: View {
                 .background {
                     RoundedRectangle(cornerRadius: zoomed(18), style: .continuous)
                         .fill(.linearGradient(
-                            colors: [
-                                Color.accentColor.opacity(0.16),
-                                Color(nsColor: .controlBackgroundColor)
-                            ],
+                            colors: [Color.accentColor.opacity(0.16), Color(nsColor: .controlBackgroundColor)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ))
                 }
             }
-        }
-    }
-
-    private func rateInputTile(
-        title: String,
-        value: Binding<Double>,
-        field: EntryField,
-        defaultValue: Double
-    ) -> some View {
-        VStack(alignment: .leading, spacing: zoomed(10)) {
-            inputLabel(title: title, subtitle: "Annual growth assumption")
-
-            percentField(title: title, value: value, field: field, width: 82, defaultValue: defaultValue)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(zoomed(14))
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: zoomed(14), style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.58))
         }
     }
 
@@ -708,7 +416,7 @@ struct MonthDetailView: View {
         VStack(alignment: .leading, spacing: zoomed(8)) {
             Text("12-month projected value")
                 .font(.subheadline.weight(.semibold))
-            Text("\(review.resolvedIITTransferName) uses \(review.resolvedIITAnnualRate.formatted(Formatters.percent)). Keren Kaspit funds use \(review.resolvedKerenAnnualRate.formatted(Formatters.percent)).")
+            Text("Projects this month's targets a year out, each at its own annual rate.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -721,12 +429,320 @@ struct MonthDetailView: View {
                 .font(.system(.largeTitle, design: .rounded, weight: .semibold))
                 .minimumScaleFactor(0.75)
                 .lineLimit(1)
-            Text("Based on this month's copied targets")
+            Text("Based on this month's targets")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
     }
+
+    // MARK: - Shared field helpers
+
+    private func formLabel(_ title: String, detail: String? = nil) -> some View {
+        VStack(alignment: .trailing, spacing: zoomed(3)) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+            if let detail {
+                Text(detail)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(width: zoomed(150), alignment: .trailing)
+        .gridColumnAlignment(.trailing)
+    }
+
+    private func numberField(title: String, value: Binding<Double>, field: EntryField, width: CGFloat = 100, defaultValue: Double) -> some View {
+        RevertableInputRow(
+            title: title,
+            isDefault: ValueComparison.approximatelyEqual(value.wrappedValue, defaultValue),
+            spacing: zoomed(4),
+            revert: { value.wrappedValue = defaultValue }
+        ) {
+            TextField(title, value: value, format: Formatters.number)
+                .focused($focusedField, equals: field)
+                .financialFieldStyle(width: width)
+                .accessibilityLabel(title)
+        }
+    }
+
+    private func sectionCaption(_ text: String) -> some View {
+        Text(text.uppercased())
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    private func emptyHint(_ text: String) -> some View {
+        Text(text)
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, zoomed(6))
+    }
+
+    // MARK: - Add / remove
+
+    private func addSpendCategory() {
+        let category = SpendCategory(name: "New category", target: 0, actual: 0, sortOrder: review.nextSpendSortOrder())
+        modelContext.insert(category)
+        review.spendCategories.append(category)
+    }
+
+    private func addRoutingCategory() {
+        let category = RoutingCategory(name: "New fund", target: 0, annualRate: ClearanceSettings.defaultKerenAnnualRate, sortOrder: review.nextRoutingSortOrder())
+        modelContext.insert(category)
+        review.routingCategories.append(category)
+    }
+
+    private func requestRemoval(of name: String, perform: @escaping () -> Void) {
+        let display = name.isEmpty ? "this category" : name
+        pendingDeletion = PendingDeletion(name: display, perform: perform)
+    }
+
+    private func delete(spend category: SpendCategory) {
+        review.spendCategories.removeAll { $0.id == category.id }
+        modelContext.delete(category)
+    }
+
+    private func delete(routing category: RoutingCategory) {
+        review.routingCategories.removeAll { $0.id == category.id }
+        modelContext.delete(category)
+    }
 }
+
+// MARK: - Inline rename field (shared by spend & routing rows)
+
+private struct InlineRenameField: View {
+    @Binding var name: String
+    let placeholder: String
+    let revealControl: Bool
+    @State private var isEditing = false
+
+    private var display: String { name.isEmpty ? placeholder : name }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            if isEditing {
+                TextField(placeholder, text: $name)
+                    .textFieldStyle(.plain)
+                    .font(.subheadline.weight(.semibold))
+                    .onSubmit { isEditing = false }
+            } else {
+                Text(display)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+            }
+
+            Button {
+                isEditing.toggle()
+            } label: {
+                Image(systemName: isEditing ? "checkmark.circle" : "pencil")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .opacity(revealControl || isEditing ? 1 : 0.6)
+            .accessibilityLabel(isEditing ? "Finish renaming \(display)" : "Rename \(display)")
+            .help(isEditing ? "Finish renaming" : "Rename")
+        }
+    }
+}
+
+// MARK: - Remove control (hover-revealed, destructive)
+
+private struct RemoveCategoryButton: View {
+    let categoryName: String
+    let revealed: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(role: .destructive, action: action) {
+            Image(systemName: "trash")
+                .font(.caption)
+                .foregroundStyle(revealed ? Color(.systemRed) : .secondary)
+        }
+        .buttonStyle(.plain)
+        .opacity(revealed ? 1 : 0.6)
+        .accessibilityLabel("Remove \(categoryName.isEmpty ? "category" : categoryName)")
+        .help("Remove")
+    }
+}
+
+// MARK: - Ghost "Add" button
+
+private struct AddCategoryButton: View {
+    @Environment(\.appZoomScale) private var appZoomScale
+    let title: String
+    let action: () -> Void
+
+    private var zoom: CGFloat { CGFloat(appZoomScale) }
+
+    var body: some View {
+        Button(action: action) {
+            Label(title, systemImage: "plus.circle")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.vertical, 8 * zoom)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .ghostAddBackground(cornerRadius: 14 * zoom)
+    }
+}
+
+private extension View {
+    /// A dashed ghost outline, upgraded to interactive Liquid Glass on macOS 26+.
+    @ViewBuilder
+    func ghostAddBackground(cornerRadius: CGFloat) -> some View {
+        if #available(macOS 26.0, *) {
+            glassEffect(.regular.interactive(), in: .rect(cornerRadius: cornerRadius))
+        } else {
+            overlay {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                    .foregroundStyle(Color.secondary.opacity(0.4))
+            }
+        }
+    }
+}
+
+// MARK: - Spend category row
+
+private struct SpendCategoryRow: View {
+    @Environment(\.appZoomScale) private var appZoomScale
+    @Bindable var category: SpendCategory
+    let onRemove: () -> Void
+    @State private var isHovering = false
+
+    private func zoomed(_ value: CGFloat) -> CGFloat { value * CGFloat(appZoomScale) }
+
+    var body: some View {
+        HStack(spacing: zoomed(10)) {
+            InlineRenameField(name: $category.name, placeholder: "Category", revealControl: isHovering)
+                .frame(width: zoomed(170), alignment: .leading)
+
+            Spacer(minLength: zoomed(8))
+
+            labeledField("Target", value: $category.target)
+            labeledField("Actual", value: $category.actual)
+
+            RemoveCategoryButton(categoryName: category.name, revealed: isHovering, action: onRemove)
+        }
+        .padding(.vertical, zoomed(8))
+        .padding(.horizontal, zoomed(10))
+        .frame(maxWidth: zoomed(560), alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: zoomed(14), style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.58))
+        }
+        .onHover { isHovering = $0 }
+    }
+
+    private func labeledField(_ title: String, value: Binding<Double>) -> some View {
+        VStack(alignment: .leading, spacing: zoomed(3)) {
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            TextField(title, value: value, format: Formatters.number)
+                .financialFieldStyle(width: 88)
+                .accessibilityLabel("\(category.name) \(title)")
+        }
+    }
+}
+
+// MARK: - Routing category row
+
+private struct RoutingCategoryRow: View {
+    @Environment(\.appZoomScale) private var appZoomScale
+    @Bindable var category: RoutingCategory
+    let onRemove: () -> Void
+    @State private var isHovering = false
+
+    private func zoomed(_ value: CGFloat) -> CGFloat { value * CGFloat(appZoomScale) }
+    private var displayName: String { category.name.isEmpty ? "Fund" : category.name }
+
+    var body: some View {
+        HStack(spacing: zoomed(10)) {
+            Toggle(isOn: $category.didTransfer) {
+                Text("Mark \(displayName) transferred")
+            }
+            .toggleStyle(.checkbox)
+            .labelsHidden()
+            .accessibilityLabel("Mark \(displayName) transferred")
+            .help("Mark \(displayName) transferred")
+
+            InlineRenameField(name: $category.name, placeholder: "Fund", revealControl: isHovering)
+                .frame(width: zoomed(200), alignment: .leading)
+
+            Spacer(minLength: zoomed(8))
+
+            TextField("Amount", value: $category.target, format: Formatters.number)
+                .financialFieldStyle(width: 100)
+                .accessibilityLabel("\(displayName) amount")
+
+            RemoveCategoryButton(categoryName: category.name, revealed: isHovering, action: onRemove)
+        }
+        .padding(.vertical, zoomed(8))
+        .padding(.horizontal, zoomed(10))
+        .frame(maxWidth: zoomed(560), alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: zoomed(14), style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.58))
+        }
+        .onHover { isHovering = $0 }
+    }
+}
+
+// MARK: - Per-fund growth-rate row
+
+private struct RateRow: View {
+    @Environment(\.appZoomScale) private var appZoomScale
+    @Bindable var category: RoutingCategory
+
+    private func zoomed(_ value: CGFloat) -> CGFloat { value * CGFloat(appZoomScale) }
+    private var displayName: String { category.name.isEmpty ? "Fund" : category.name }
+
+    private var percentBinding: Binding<Double> {
+        Binding {
+            category.annualRate * 100
+        } set: { newValue in
+            category.annualRate = newValue / 100
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: zoomed(10)) {
+            VStack(alignment: .leading, spacing: zoomed(2)) {
+                Text(displayName)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                Text("Annual growth assumption")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: zoomed(8))
+
+            HStack(spacing: zoomed(6)) {
+                TextField("Rate", value: percentBinding, format: Formatters.number)
+                    .financialFieldStyle(width: 72)
+                    .accessibilityLabel("\(displayName) annual rate")
+                Text("%")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(zoomed(12))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: zoomed(14), style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.58))
+        }
+    }
+}
+
+// MARK: - Card container (Liquid Glass on macOS 26+)
 
 private struct ReviewCard<Content: View>: View {
     @Environment(\.appZoomScale) private var appZoomScale
