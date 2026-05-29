@@ -96,14 +96,18 @@ struct MonthDetailView: View {
                     }
                     .frame(width: primaryWidth, alignment: .top)
 
+                    // Buffer Trend lives in the secondary column and stretches to fill the
+                    // leftover height, so the (shorter) right column bottom-aligns with the
+                    // left one instead of leaving an awkward gap above a full-width chart.
                     VStack(spacing: cardSpacing) {
                         growthEstimatorSection
                         InsightsView(placement: .metricsOnly)
+                        InsightsView(placement: .chartOnly)
+                            .frame(maxHeight: .infinity)
                     }
-                    .frame(width: secondaryWidth, alignment: .top)
+                    .frame(width: secondaryWidth)
+                    .frame(maxHeight: .infinity, alignment: .top)
                 }
-
-                InsightsView(placement: .chartOnly)
             }
         } else {
             VStack(alignment: .leading, spacing: zoomed(22)) {

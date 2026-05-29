@@ -37,9 +37,11 @@ struct InsightsView: View {
                 metricsSection
             }
         case .chartOnly:
-            ReviewAnalyticsCard {
+            ReviewAnalyticsCard(fillHeight: true) {
                 chartSection
+                    .frame(maxHeight: .infinity)
             }
+            .frame(maxHeight: .infinity)
         }
     }
 
@@ -83,7 +85,10 @@ struct InsightsView: View {
                 AxisMarks(position: .leading)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: zoomed(placement == .chartOnly ? 200 : 180))
+            .frame(
+                minHeight: zoomed(placement == .chartOnly ? 200 : 180),
+                maxHeight: placement == .chartOnly ? .infinity : zoomed(180)
+            )
             .accessibilityLabel("Buffer Trend")
             .accessibilityValue(bufferTrendAccessibilityValue)
         }
@@ -119,15 +124,18 @@ private struct ReviewAnalyticsCard<Content: View>: View {
     @Environment(\.appZoomScale) private var appZoomScale
     let title: String?
     let systemImage: String?
+    let fillHeight: Bool
     @ViewBuilder var content: Content
 
     init(
         title: String? = "Insights & Analytics",
         systemImage: String? = "waveform.path.ecg",
+        fillHeight: Bool = false,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
         self.systemImage = systemImage
+        self.fillHeight = fillHeight
         self.content = content()
     }
 
@@ -145,7 +153,7 @@ private struct ReviewAnalyticsCard<Content: View>: View {
             content
         }
         .padding(zoomed(20))
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: fillHeight ? .infinity : nil, alignment: .topLeading)
         .glassSurface(cornerRadius: zoomed(20)) {
             RoundedRectangle(cornerRadius: zoomed(20), style: .continuous)
                 .fill(Color(nsColor: .controlBackgroundColor))
