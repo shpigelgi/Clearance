@@ -11,7 +11,9 @@ final class SinkingFundsUITests: ClearanceUITestCase {
     }
 
     private func transferCheckboxes() -> [XCUIElement] {
-        app.checkBoxes.allElementsBoundByIndex.filter { $0.label.hasPrefix("Mark ") }
+        app.checkBoxes.allElementsBoundByIndex.filter {
+            $0.label.hasPrefix("Mark ") && $0.label.hasSuffix(" transferred")
+        }
     }
 
     func test_newMonthSeedsFundsAndSpend() throws {

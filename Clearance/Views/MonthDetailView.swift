@@ -25,7 +25,7 @@ struct MonthDetailView: View {
     }
 
     /// A spend row tagged to a fund is over-withdrawn if its actual exceeds what the fund held.
-    private func isOverWithdrawn(_ category: SpendCategory) -> Bool {
+    private func isOverWithdrawn(_ category: SpendCategory, ledger: FundLedger) -> Bool {
         guard let f = fund(category.fundID) else { return false }
         return category.actual > ledger.availableBefore(category, of: f)
     }
@@ -129,6 +129,7 @@ struct MonthDetailView: View {
 
     @ViewBuilder
     private func detailContent(for width: CGFloat) -> some View {
+        let ledger = ledger // build the fund ledger once per layout pass, not per row
         if usesTwoColumns(for: width) {
             let spacing = zoomed(18)
             let cardSpacing = zoomed(16)
@@ -140,8 +141,8 @@ struct MonthDetailView: View {
 
                 HStack(alignment: .top, spacing: spacing) {
                     VStack(spacing: cardSpacing) {
-                        clearanceCheckSection
-                        wealthEngineSection
+                        clearanceCheckSection(ledger)
+                        wealthEngineSection(ledger)
                         monthRoutingSummarySection
                     }
                     .frame(width: primaryWidth, alignment: .top)
@@ -164,8 +165,8 @@ struct MonthDetailView: View {
                 header
 
                 VStack(spacing: zoomed(16)) {
-                    clearanceCheckSection
-                    wealthEngineSection
+                    clearanceCheckSection(ledger)
+                    wealthEngineSection(ledger)
                     monthRoutingSummarySection
                     growthEstimatorSection
                 }
@@ -214,7 +215,7 @@ struct MonthDetailView: View {
 
     // MARK: - Clearance Check
 
-    private var clearanceCheckSection: some View {
+    private func clearanceCheckSection(_ ledger: FundLedger) -> some View {
         ReviewCard(title: "The Clearance Check", systemImage: "checkmark.seal") {
             VStack(alignment: .leading, spacing: zoomed(14)) {
                 Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: zoomed(14), verticalSpacing: zoomed(12)) {
@@ -263,7 +264,7 @@ struct MonthDetailView: View {
                             SpendCategoryRow(
                                 category: category,
                                 funds: activeFunds,
-                                overWithdrawn: isOverWithdrawn(category),
+                                overWithdrawn: isOverWithdrawn(category, ledger: ledger),
                                 onRemove: { requestRemoval(of: category.name) { delete(spend: category) } }
                             )
                         }
@@ -345,7 +346,7 @@ struct MonthDetailView: View {
 
     // MARK: - Wealth Engine
 
-    private var wealthEngineSection: some View {
+    private func wealthEngineSection(_ ledger: FundLedger) -> some View {
         ReviewCard(title: "The Wealth Engine", systemImage: "arrow.triangle.2.circlepath") {
             VStack(alignment: .leading, spacing: zoomed(12)) {
                 if review.routingCategories.isEmpty {
@@ -801,7 +802,8 @@ private struct RoutingCategoryRow: View {
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(balance >= 0 ? Color(.systemGreen) : Color(.systemRed))
                     .help("Current fund balance")
-                    .accessibilityLabel("\(displayName) balance \(balance.formatted(Formatters.currency))")
+                    .accessibilityLabel("\(displayName) balance")
+                    .accessibilityValue(balance.formatted(Formatters.currency))
                     .accessibilityIdentifier("\(displayName) balance")
             }
 

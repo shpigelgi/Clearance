@@ -4,18 +4,25 @@ import Foundation
 /// rows) and withdrawals (fund-tagged spend rows) across all months. Balances are always
 /// computed live — never stored — so editing any month keeps the math consistent.
 struct FundLedger {
-    let contributions: [RoutingCategory]
-    let withdrawals: [SpendCategory]
+    /// Net flow per fund, computed once: Σ confirmed contributions − Σ withdrawals, keyed by
+    /// fundID. Looking up a balance is then O(1), so per-row rendering stays cheap even with
+    /// many months and categories.
+    private let netFlowByFund: [UUID: Double]
 
-    /// `openingBalance + Σ confirmed contributions − Σ withdrawals`, for one fund.
+    init(contributions: [RoutingCategory], withdrawals: [SpendCategory]) {
+        var net: [UUID: Double] = [:]
+        for contribution in contributions where contribution.didTransfer {
+            if let id = contribution.fundID { net[id, default: 0] += contribution.target }
+        }
+        for withdrawal in withdrawals {
+            if let id = withdrawal.fundID { net[id, default: 0] -= withdrawal.actual }
+        }
+        netFlowByFund = net
+    }
+
+    /// `openingBalance + (Σ confirmed contributions − Σ withdrawals)`, for one fund.
     func balance(of fund: Fund) -> Double {
-        let inflow = contributions.reduce(0.0) { sum, c in
-            (c.fundID == fund.id && c.didTransfer) ? sum + c.target : sum
-        }
-        let outflow = withdrawals.reduce(0.0) { sum, w in
-            w.fundID == fund.id ? sum + w.actual : sum
-        }
-        return fund.openingBalance + inflow - outflow
+        fund.openingBalance + (netFlowByFund[fund.id] ?? 0)
     }
 
     /// Balance available *before* a given withdrawal row counts — used to flag over-withdrawal

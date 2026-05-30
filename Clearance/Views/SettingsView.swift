@@ -94,6 +94,7 @@ private struct FundRow: View {
                     .font(.headline.monospacedDigit())
                     .foregroundStyle(balance >= 0 ? Color(.systemGreen) : Color(.systemRed))
                     .accessibilityLabel("\(fund.name) balance")
+                    .accessibilityValue(balance.formatted(Formatters.currency))
 
                 Button {
                     fund.archived.toggle()
