@@ -1,0 +1,96 @@
+name: Release
+
+# Cut a release by pushing a version tag, e.g.:
+#   git tag v1.0.1 && git push origin v1.0.1
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # create the GitHub Release and push the updated appcast back to master
+
+jobs:
+  release:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so we can commit the appcast back to master
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.app
+
+      - name: Derive version from tag
+        id: ver
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"          # v1.0.1 -> 1.0.1
+          echo "marketing=$TAG" >> "$GITHUB_OUTPUT"
+          echo "build=${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"  # monotonic CFBundleVersion
+
+      - name: Archive (ad-hoc, no Developer ID)
+        run: |
+          xcodebuild archive \
+            -project Clearance.xcodeproj \
+            -scheme Clearance \
+            -configuration Release \
+            -archivePath "$RUNNER_TEMP/Clearance.xcarchive" \
+            -destination 'generic/platform=macOS' \
+            MARKETING_VERSION=${{ steps.ver.outputs.marketing }} \
+            CURRENT_PROJECT_VERSION=${{ steps.ver.outputs.build }} \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="" \
+            CODE_SIGNING_ALLOWED=YES
+
+      - name: Export .app from archive
+        run: |
+          mkdir -p "$RUNNER_TEMP/export"
+          cp -R "$RUNNER_TEMP/Clearance.xcarchive/Products/Applications/Clearance.app" \
+                "$RUNNER_TEMP/export/Clearance.app"
+
+      - name: Build DMG
+        run: |
+          brew install create-dmg
+          mkdir -p dist
+          DMG="dist/Clearance-${{ steps.ver.outputs.marketing }}.dmg"
+          create-dmg \
+            --volname "Clearance" \
+            --app-drop-link 450 180 \
+            --icon "Clearance.app" 150 180 \
+            "$DMG" \
+            "$RUNNER_TEMP/export/Clearance.app" \
+          || hdiutil create -volname Clearance \
+               -srcfolder "$RUNNER_TEMP/export/Clearance.app" \
+               -ov -format UDZO "$DMG"
+
+      - name: Fetch Sparkle tools
+        run: |
+          SPARKLE_VER=2.9.2
+          curl -L -o sparkle.tar.xz \
+            "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VER}/Sparkle-${SPARKLE_VER}.tar.xz"
+          mkdir sparkle && tar -xf sparkle.tar.xz -C sparkle
+
+      - name: Sign update + regenerate appcast
+        run: |
+          printf '%s' "${{ secrets.SPARKLE_PRIVATE_KEY }}" > "$RUNNER_TEMP/ed_key"
+          ./sparkle/bin/generate_appcast \
+            --ed-key-file "$RUNNER_TEMP/ed_key" \
+            --download-url-prefix "https://github.com/shpigelgi/Clearance/releases/download/${GITHUB_REF_NAME}/" \
+            dist/
+          rm -f "$RUNNER_TEMP/ed_key"
+          cp dist/appcast.xml docs/appcast.xml
+
+      - name: Create GitHub Release + attach DMG
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: dist/Clearance-${{ steps.ver.outputs.marketing }}.dmg
+
+      - name: Commit updated appcast to master (GitHub Pages source)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout master
+          git add docs/appcast.xml
+          git commit -m "Update appcast for ${GITHUB_REF_NAME}" || echo "no appcast changes"
+          git push origin master

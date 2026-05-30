@@ -48,7 +48,21 @@ It answers one recurring question every month — **"Did I clear, and where did 
 - **Liquid Glass** card surfaces on macOS 26+, with a graceful material fallback on earlier systems.
 - Local-only **SwiftData** persistence — no CloudKit, no iCloud, no account.
 
-## Open
+## Install
+
+1. Download the latest `Clearance-x.y.z.dmg` from the [Releases page](https://github.com/shpigelgi/Clearance/releases).
+2. Open the DMG and drag **Clearance** into your **Applications** folder.
+3. **First launch only** — because the app is free/ad-hoc-signed (not notarized through a paid Apple Developer account), macOS Gatekeeper blocks the first open. Either:
+   - **Right-click** `Clearance.app` → **Open** → **Open** in the dialog, or
+   - run `xattr -dr com.apple.quarantine /Applications/Clearance.app` in Terminal.
+
+   You only do this once. After that it opens normally and Spotlight finds it like any app.
+
+### Updates
+
+Clearance updates itself. It checks for new releases automatically (about once a day and on launch), and you can check any time via **Clearance → Check for Updates…**. When a new version is available it downloads, verifies, and installs in place — no manual reinstall, and no Gatekeeper prompt on updates.
+
+## Build from source
 
 Open `Clearance.xcodeproj` in Xcode and run the `Clearance` scheme on macOS 14 or newer.
 

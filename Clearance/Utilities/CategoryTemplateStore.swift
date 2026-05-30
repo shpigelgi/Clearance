@@ -53,16 +53,18 @@ final class CategoryTemplateStore: ObservableObject {
         if let data = try? JSONEncoder().encode(spend) { defaults.set(data, forKey: spendKey) }
     }
 
-    // First-run defaults — note "Car fund" in place of the former "Abarth Keren Kaspit".
+    // First-run defaults — generic sample categories a new user can rename/retune.
+    // These only seed a brand-new (empty) store; existing installs load their own
+    // persisted template and ignore these constants.
     static let defaultSpend: [SpendCategoryTemplate] = [
-        .init(name: "Mizrahi", target: 3_544),
-        .init(name: "1824", target: 3_250),
+        .init(name: "Checking", target: 3_000),
+        .init(name: "Credit card", target: 1_500),
     ]
 
     static let defaultRouting: [RoutingCategoryTemplate] = [
-        .init(name: "IIT portfolio", target: 1_506, annualRate: 0.08),
-        .init(name: "Emergency Keren Kaspit", target: 1_000, annualRate: 0.0375),
+        .init(name: "Investments", target: 1_000, annualRate: 0.08),
+        .init(name: "Emergency fund", target: 1_000, annualRate: 0.0375),
         .init(name: "Car fund", target: 400, annualRate: 0.0375),
-        .init(name: "Hobby Keren Kaspit", target: 300, annualRate: 0.0375),
+        .init(name: "Hobby fund", target: 300, annualRate: 0.0375),
     ]
 }

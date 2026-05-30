@@ -225,19 +225,19 @@ Remaining Buffer         ₪7,195   ✅ Surplus — you cleared
 Now you route that surplus. Your funds this month:
 
 ```
-Investment portfolio   ₪1,506   (8.0%/yr)   ☑ transferred
+Investment portfolio   ₪1,500   (8.0%/yr)   ☑ transferred
 Emergency fund         ₪1,000   (3.75%/yr)  ☑ transferred
 Car fund                 ₪400   (3.75%/yr)  ☐ pending
 Hobby fund               ₪300   (3.75%/yr)  ☐ pending
 ─────────────────────────────────────────────────────
-Planned routing        ₪3,206       Confirmed ₪2,506   Pending ₪700
+Planned routing        ₪3,200       Confirmed ₪2,500   Pending ₪700
 Transfer progress: 2 of 4 complete
 ```
 
 The **Growth Estimator** tells you that routing at these targets projects to
 roughly **₪21,000** of contributions-plus-growth over the next twelve months. The
 **Buffer Trend** shows this month's ₪7,195 sitting alongside previous months, and
-**Wealth Velocity** ticks up by the ₪2,506 you confirmed.
+**Wealth Velocity** ticks up by the ₪2,500 you confirmed.
 
 You leave ₪700 of routing "pending" because you haven't made those two transfers
 yet — so next time you open the app, it's still asking you to finish the job.

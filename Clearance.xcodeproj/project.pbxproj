@@ -16,6 +16,8 @@
 		877E3E0B12AAC5A35C3E33AF /* CategoryTemplateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BEED678BBC5469D426A4300 /* CategoryTemplateStore.swift */; };
 		9CA0EFA6E88F2AEDE2B8CF20 /* RoutingCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2DF4C52B902210D9C97228F /* RoutingCategory.swift */; };
 		A00000000000000000000001 /* ClearanceApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000001 /* ClearanceApp.swift */; };
+		DD0000000000000000000002 /* UpdaterViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0000000000000000000001 /* UpdaterViewModel.swift */; };
+		DD0000000000000000000011 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = DD0000000000000000000010 /* Sparkle */; };
 		A00000000000000000000002 /* ClearanceAppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* ClearanceAppModel.swift */; };
 		A00000000000000000000003 /* MonthlyReview.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000003 /* MonthlyReview.swift */; };
 		A00000000000000000000004 /* ClearanceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000004 /* ClearanceSettings.swift */; };
@@ -58,6 +60,7 @@
 		57651D08565724A1BAE6F605 /* CategoryBackfill.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CategoryBackfill.swift; sourceTree = "<group>"; };
 		991744E68A8E12774D879A8D /* MenusAndSettingsUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MenusAndSettingsUITests.swift; sourceTree = "<group>"; };
 		A10000000000000000000001 /* ClearanceApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearanceApp.swift; sourceTree = "<group>"; };
+		DD0000000000000000000001 /* UpdaterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdaterViewModel.swift; sourceTree = "<group>"; };
 		A10000000000000000000002 /* ClearanceAppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearanceAppModel.swift; sourceTree = "<group>"; };
 		A10000000000000000000003 /* MonthlyReview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthlyReview.swift; sourceTree = "<group>"; };
 		A10000000000000000000004 /* ClearanceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearanceSettings.swift; sourceTree = "<group>"; };
@@ -89,6 +92,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DD0000000000000000000011 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -130,8 +134,17 @@
 				A30000000000000000000007 /* ViewModels */,
 				A30000000000000000000005 /* Views */,
 				A30000000000000000000006 /* Utilities */,
+				DD0000000000000000000003 /* Updates */,
 			);
 			path = Clearance;
+			sourceTree = "<group>";
+		};
+		DD0000000000000000000003 /* Updates */ = {
+			isa = PBXGroup;
+			children = (
+				DD0000000000000000000001 /* UpdaterViewModel.swift */,
+			);
+			path = Updates;
 			sourceTree = "<group>";
 		};
 		A30000000000000000000003 /* Products */ = {
@@ -202,7 +215,6 @@
 				991744E68A8E12774D879A8D /* MenusAndSettingsUITests.swift */,
 				B4BC62B5DCC40A4D6ACEF51B /* SinkingFundsUITests.swift */,
 			);
-			name = ClearanceUITests;
 			path = ClearanceUITests;
 			sourceTree = "<group>";
 		};
@@ -248,6 +260,9 @@
 			dependencies = (
 			);
 			name = Clearance;
+			packageProductDependencies = (
+				DD0000000000000000000010 /* Sparkle */,
+			);
 			productName = Clearance;
 			productReference = A1000000000000000000000C /* Clearance.app */;
 			productType = "com.apple.product-type.application";
@@ -276,6 +291,9 @@
 				Base,
 			);
 			mainGroup = A30000000000000000000001;
+			packageReferences = (
+				58BCD6362FCB3A7500A65DAC /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			productRefGroup = A30000000000000000000003 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -321,6 +339,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A00000000000000000000001 /* ClearanceApp.swift in Sources */,
+				DD0000000000000000000002 /* UpdaterViewModel.swift in Sources */,
 				A00000000000000000000002 /* ClearanceAppModel.swift in Sources */,
 				A00000000000000000000003 /* MonthlyReview.swift in Sources */,
 				A00000000000000000000004 /* ClearanceSettings.swift in Sources */,
@@ -511,6 +530,7 @@
 		A90000000000000000000003 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Clearance/Clearance.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -522,6 +542,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Clearance;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026";
+				INFOPLIST_FILE = Clearance/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -539,6 +560,7 @@
 		A90000000000000000000004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Clearance/Clearance.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -550,6 +572,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Clearance;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026";
+				INFOPLIST_FILE = Clearance/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -595,6 +618,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		DD0000000000000000000010 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 58BCD6362FCB3A7500A65DAC /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		58BCD6362FCB3A7500A65DAC /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.9.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
 	};
 	rootObject = A50000000000000000000001 /* Project object */;
 }

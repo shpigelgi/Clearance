@@ -7,6 +7,7 @@ struct ClearanceApp: App {
     @StateObject private var appModel = ClearanceAppModel()
     @StateObject private var zoomController = AppZoomController()
     @StateObject private var templateStore = CategoryTemplateStore()
+    @StateObject private var updater = UpdaterViewModel()
 
     var body: some Scene {
         WindowGroup {
@@ -18,6 +19,13 @@ struct ClearanceApp: App {
         .modelContainer(appModel.modelContainer)
         .defaultSize(width: 1120, height: 780)
         .commands {
+            CommandGroup(after: .appInfo) {
+                Button("Check for Updates…") {
+                    updater.checkForUpdates()
+                }
+                .disabled(!updater.canCheckForUpdates)
+            }
+
             CommandGroup(after: .saveItem) {
                 Button("Export to JSON...") {
                     appModel.exportManager.exportMonthlyReviews()

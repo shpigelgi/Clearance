@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Sparkle ships its updater as bundled XPC helper tools inside Sparkle.framework.
+	  With Hardened Runtime enabled and ad-hoc signing (no shared Team ID), library
+	  validation would refuse to load those helpers and updates would silently fail.
+	  Disabling library validation is the Sparkle-documented fix; the app is NOT
+	  sandboxed, so no sandbox/XPC entitlements are needed.
+	-->
+	<key>com.apple.security.cs.disable-library-validation</key>
+	<true/>
+</dict>
+</plist>
