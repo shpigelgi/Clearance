@@ -52,11 +52,12 @@ It answers one recurring question every month — **"Did I clear, and where did 
 
 1. Download the latest `Clearance-x.y.z.dmg` from the [Releases page](https://github.com/shpigelgi/Clearance/releases).
 2. Open the DMG and drag **Clearance** into your **Applications** folder.
-3. **First launch only** — because the app is free/ad-hoc-signed (not notarized through a paid Apple Developer account), macOS Gatekeeper blocks the first open. Either:
-   - **Right-click** `Clearance.app` → **Open** → **Open** in the dialog, or
-   - run `xattr -dr com.apple.quarantine /Applications/Clearance.app` in Terminal.
+3. **First launch only** — because the app is free/ad-hoc-signed (not notarized through a paid Apple Developer account), macOS Gatekeeper blocks the first open with a *"Clearance Not Opened / Apple could not verify…"* dialog. To allow it:
+   - **macOS 15 (Sequoia) and later, incl. macOS 26 (Tahoe):** click **Done**, then open **System Settings → Privacy & Security**, scroll to the *"Clearance was blocked"* message, and click **Open Anyway**. Authenticate, and it launches.
+   - **Any macOS, via Terminal (fastest):** `xattr -dr com.apple.quarantine /Applications/Clearance.app`, then open the app normally.
+   - *(Older macOS only: right-click `Clearance.app` → **Open** → **Open**.)*
 
-   You only do this once. After that it opens normally and Spotlight finds it like any app.
+   You only do this once. After that it opens normally, Spotlight finds it like any app, and in-app updates install without the prompt.
 
 ### Updates
 
