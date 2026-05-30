@@ -281,7 +281,7 @@ struct MonthDetailView: View {
 
     private var bufferHero: some View {
         HStack(alignment: .top, spacing: zoomed(14)) {
-            formLabel("Remaining Buffer", detail: "Income - rent - actual card spend")
+            formLabel("Remaining Buffer", detail: "Income - rent - card spend (fund-backed spend excluded)")
             VStack(alignment: .leading, spacing: zoomed(4)) {
                 Text(review.remainingBuffer, format: Formatters.currency)
                     .font(.system(.title, design: .rounded, weight: .bold))
