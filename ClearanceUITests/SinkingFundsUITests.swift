@@ -120,4 +120,83 @@ final class SinkingFundsUITests: ClearanceUITestCase {
 
         XCTAssertTrue(app.staticTexts["Buffer Trend"].waitForExistence(timeout: 5), "Insights should still render with multiple months")
     }
+
+    // MARK: - Sinking-fund math gaps
+
+    private func amount(_ string: String?) -> Double {
+        Double((string ?? "").filter { $0.isNumber || $0 == "-" }) ?? 0
+    }
+
+    func test_balanceAccruesWhenContributionTransferred() throws {
+        // Confirming a contribution should raise the fund's derived balance by its target.
+        let balance = app.staticTexts["IIT portfolio balance"]
+        XCTAssertTrue(balance.waitForExistence(timeout: 5))
+        let before = amount(balance.value as? String)
+
+        let toggle = app.checkBoxes["Mark IIT portfolio transferred"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 3))
+        toggle.click()
+        Thread.sleep(forTimeInterval: 0.4)
+
+        let after = amount(balance.value as? String)
+        XCTAssertGreaterThan(after, before, "Marking a contribution transferred should accrue it into the fund balance")
+    }
+
+    func test_overWithdrawalWarningAppears() throws {
+        // Funds open at ₪0, so funding any spend (default actual > 0) from one over-withdraws it.
+        let picker = app.popUpButtons["Mizrahi funded by"]
+        guard picker.waitForExistence(timeout: 5) else { throw XCTSkip("Funded-by picker not reachable") }
+        picker.click()
+        let carFund = app.menuItems["Car fund"]
+        guard carFund.waitForExistence(timeout: 3) else {
+            app.typeKey(.escape, modifierFlags: [])
+            throw XCTSkip("Fund menu not reachable")
+        }
+        carFund.click()
+        let warning = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label == %@", "Mizrahi over-withdrawn")).firstMatch
+        XCTAssertTrue(warning.waitForExistence(timeout: 3), "Spending beyond a fund's balance should show the over-withdrawn warning")
+    }
+
+    func test_renameEverywhere_propagatesAcrossMonths() throws {
+        // Add a second (earlier) month so the Hobby fund appears in two months.
+        app.buttons["Add Specific Month"].click()
+        guard app.staticTexts["Add Monthly Review"].waitForExistence(timeout: 5) else { throw XCTSkip("Add Month sheet") }
+        if let yearPopup = app.popUpButtons.allElementsBoundByIndex.last, yearPopup.exists {
+            yearPopup.click()
+            if let earlier = app.menuItems.allElementsBoundByIndex.first(where: { Int($0.label) != nil }) { earlier.click() }
+        }
+        (app.buttons["Create Month"].exists ? app.buttons["Create Month"] : app.buttons["Open Existing"]).click()
+
+        // Rename the Hobby fund with the "All months" scope in the currently-shown month.
+        let pencil = app.buttons["Rename Hobby Keren Kaspit"]
+        guard pencil.waitForExistence(timeout: 5) else { throw XCTSkip("Fund rename control not reachable") }
+        pencil.click()
+        let field = app.textFields["category rename field"]
+        guard field.waitForExistence(timeout: 3) else { throw XCTSkip("Rename field not reachable") }
+        field.click()
+        Thread.sleep(forTimeInterval: 0.2)
+        let clearCount = max(((field.value as? String) ?? "").count + 2, 4)
+        for _ in 0..<clearCount { app.typeKey(.rightArrow, modifierFlags: []) }
+        for _ in 0..<clearCount { app.typeKey(.delete, modifierFlags: []) }
+        app.typeText("Vacation")
+        let finish = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Finish renaming")).firstMatch
+        if finish.waitForExistence(timeout: 2) { finish.click() } else { app.typeKey(.return, modifierFlags: []) }
+
+        let everywhere = [app.sheets, app.dialogs, app.popovers]
+            .compactMap { c -> XCUIElement? in let b = c.buttons["All months"].firstMatch; return b.waitForExistence(timeout: 2) ? b : nil }
+            .first
+        guard let everywhere else { throw XCTSkip("Rename scope chooser not reachable") }
+        everywhere.click()
+
+        // Switch to the other month in the sidebar and confirm the rename propagated.
+        let cells = app.outlines.cells.allElementsBoundByIndex
+        guard cells.count >= 2 else { throw XCTSkip("Two month rows not reachable") }
+        // Click whichever row is not currently selected to view the other month.
+        (cells.first(where: { !$0.isSelected }) ?? cells[0]).click()
+        XCTAssertTrue(
+            app.checkBoxes["Mark Vacation transferred"].waitForExistence(timeout: 4),
+            "Renaming 'All months' should rename the fund's contribution in every month"
+        )
+    }
 }
