@@ -32,6 +32,7 @@
 		A0000000000000000000000F /* AppZoomEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000010 /* AppZoomEnvironment.swift */; };
 		A00000000000000000000010 /* RevertableInputRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000011 /* RevertableInputRow.swift */; };
 		A9E80A980324E02BF90B5884 /* ClearanceUITestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB3094350E8753736E545FD2 /* ClearanceUITestCase.swift */; };
+		B77435731312F387ABE9879C /* SinkingFundsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4BC62B5DCC40A4D6ACEF51B /* SinkingFundsUITests.swift */; };
 		DFD032B7E721A844209C88B7 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7BB1B2864D8053283475FE9 /* Cocoa.framework */; };
 		EB7C0A5016C2D03C2A795C79 /* MenusAndSettingsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 991744E68A8E12774D879A8D /* MenusAndSettingsUITests.swift */; };
 		EC20877B269E33B0686471FD /* Fund.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCE049F87F4A062384F7147 /* Fund.swift */; };
@@ -75,6 +76,7 @@
 		A10000000000000000000011 /* RevertableInputRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RevertableInputRow.swift; sourceTree = "<group>"; };
 		AA0B7291060E5D9A5AEF60E7 /* FundLedger.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FundLedger.swift; sourceTree = "<group>"; };
 		ABCE049F87F4A062384F7147 /* Fund.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Fund.swift; sourceTree = "<group>"; };
+		B4BC62B5DCC40A4D6ACEF51B /* SinkingFundsUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SinkingFundsUITests.swift; sourceTree = "<group>"; };
 		C2DF4C52B902210D9C97228F /* RoutingCategory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RoutingCategory.swift; sourceTree = "<group>"; };
 		D7BB1B2864D8053283475FE9 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
 		DB3094350E8753736E545FD2 /* ClearanceUITestCase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ClearanceUITestCase.swift; sourceTree = "<group>"; };
@@ -198,6 +200,7 @@
 				DEEF63B9171AD4582512DAA8 /* SidebarFlowsUITests.swift */,
 				40D5823E68C023B05405BB4D /* DetailInputUITests.swift */,
 				991744E68A8E12774D879A8D /* MenusAndSettingsUITests.swift */,
+				B4BC62B5DCC40A4D6ACEF51B /* SinkingFundsUITests.swift */,
 			);
 			name = ClearanceUITests;
 			path = ClearanceUITests;
@@ -309,6 +312,7 @@
 				7CE7411CA5CD6F19CD7362D8 /* SidebarFlowsUITests.swift in Sources */,
 				1A4E712BC95FC383B12874A2 /* DetailInputUITests.swift in Sources */,
 				EB7C0A5016C2D03C2A795C79 /* MenusAndSettingsUITests.swift in Sources */,
+				B77435731312F387ABE9879C /* SinkingFundsUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

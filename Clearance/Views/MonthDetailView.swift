@@ -601,6 +601,7 @@ private struct InlineRenameField: View {
                     .textFieldStyle(.plain)
                     .font(.subheadline.weight(.semibold))
                     .onSubmit { commit() }
+                    .accessibilityIdentifier("category rename field")
             } else {
                 Text(display)
                     .font(.subheadline.weight(.semibold))
@@ -740,6 +741,7 @@ private struct SpendCategoryRow: View {
                         .font(.caption2)
                         .foregroundStyle(Color(.systemRed))
                         .help("This withdrawal exceeds the fund's balance — unbacked spend")
+                        .accessibilityLabel("\(category.name) over-withdrawn")
                 }
             }
             Picker("Funded by", selection: $category.fundID) {
@@ -752,6 +754,7 @@ private struct SpendCategoryRow: View {
             .pickerStyle(.menu)
             .frame(width: zoomed(118))
             .accessibilityLabel("\(category.name) funded by")
+            .accessibilityIdentifier("\(category.name) funded by")
         }
     }
 
@@ -799,6 +802,7 @@ private struct RoutingCategoryRow: View {
                     .foregroundStyle(balance >= 0 ? Color(.systemGreen) : Color(.systemRed))
                     .help("Current fund balance")
                     .accessibilityLabel("\(displayName) balance \(balance.formatted(Formatters.currency))")
+                    .accessibilityIdentifier("\(displayName) balance")
             }
 
             Spacer(minLength: zoomed(8))

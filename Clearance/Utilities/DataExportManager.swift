@@ -24,7 +24,15 @@ final class DataExportManager: ObservableObject {
             )
 
             let reviews = try context.fetch(descriptor)
-            let payload = reviews.map(MonthlyReviewExportRecord.init(review:))
+            let funds = try context.fetch(FetchDescriptor<Fund>(sortBy: [SortDescriptor(\.sortOrder)]))
+            let ledger = FundLedger(
+                contributions: try context.fetch(FetchDescriptor<RoutingCategory>()),
+                withdrawals: try context.fetch(FetchDescriptor<SpendCategory>())
+            )
+            let payload = ClearanceExport(
+                funds: funds.map { FundExportRecord(fund: $0, balance: ledger.balance(of: $0)) },
+                months: reviews.map(MonthlyReviewExportRecord.init(review:))
+            )
 
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -59,11 +67,40 @@ final class DataExportManager: ObservableObject {
     }
 }
 
+/// Top-level export: the persistent funds (with current balances) plus every month.
+struct ClearanceExport: Codable {
+    let funds: [FundExportRecord]
+    let months: [MonthlyReviewExportRecord]
+}
+
+struct FundExportRecord: Codable {
+    let id: UUID
+    let name: String
+    let openingBalance: Double
+    let defaultContribution: Double
+    let defaultRate: Double
+    let targetGoal: Double?
+    let archived: Bool
+    let balance: Double
+
+    init(fund: Fund, balance: Double) {
+        id = fund.id
+        name = fund.name
+        openingBalance = fund.openingBalance
+        defaultContribution = fund.defaultContribution
+        defaultRate = fund.defaultRate
+        targetGoal = fund.targetGoal
+        archived = fund.archived
+        self.balance = balance
+    }
+}
+
 struct MonthlyReviewExportRecord: Codable {
     struct SpendRecord: Codable {
         let name: String
         let target: Double
         let actual: Double
+        let fundID: UUID?
     }
 
     struct RoutingRecord: Codable {
@@ -71,6 +108,7 @@ struct MonthlyReviewExportRecord: Codable {
         let target: Double
         let didTransfer: Bool
         let annualRate: Double
+        let fundID: UUID?
     }
 
     let monthKey: String
@@ -99,10 +137,10 @@ struct MonthlyReviewExportRecord: Codable {
         incomePerWorkday = review.incomePerWorkday
         rent = review.rent
         spendCategories = review.sortedSpendCategories.map {
-            SpendRecord(name: $0.name, target: $0.target, actual: $0.actual)
+            SpendRecord(name: $0.name, target: $0.target, actual: $0.actual, fundID: $0.fundID)
         }
         routingCategories = review.sortedRoutingCategories.map {
-            RoutingRecord(name: $0.name, target: $0.target, didTransfer: $0.didTransfer, annualRate: $0.annualRate)
+            RoutingRecord(name: $0.name, target: $0.target, didTransfer: $0.didTransfer, annualRate: $0.annualRate, fundID: $0.fundID)
         }
         remainingBuffer = review.remainingBuffer
         twelveMonthProjection = review.twelveMonthProjection
