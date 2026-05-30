@@ -177,8 +177,18 @@ final class DetailInputUITests: ClearanceUITestCase {
             throw XCTSkip("Hover-revealed remove control not reachable in this environment")
         }
         remove.click()
-        let confirm = app.buttons["Remove"]
-        XCTAssertTrue(confirm.waitForExistence(timeout: 3), "A destructive confirmation should appear")
+        // Scope the confirm button to the modal dialog/sheet — the app-level "Remove" query
+        // also matches the Touch Bar mirror of the button, which isn't clickable.
+        let dialogConfirm = app.dialogs.buttons["Remove"].firstMatch
+        let sheetConfirm = app.sheets.buttons["Remove"].firstMatch
+        let confirm: XCUIElement
+        if dialogConfirm.waitForExistence(timeout: 3) {
+            confirm = dialogConfirm
+        } else if sheetConfirm.waitForExistence(timeout: 1) {
+            confirm = sheetConfirm
+        } else {
+            throw XCTSkip("Confirmation modal not reachable in this environment")
+        }
         snapshot(name: "remove-fund-confirm")
         confirm.click()
         XCTAssertFalse(

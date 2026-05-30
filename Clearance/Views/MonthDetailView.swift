@@ -7,6 +7,28 @@ struct MonthDetailView: View {
     @Bindable var review: MonthlyReview
     @FocusState private var focusedField: EntryField?
     @State private var pendingDeletion: PendingDeletion?
+    @State private var renameRequest: RenameRequest?
+
+    @Query(sort: [SortDescriptor(\Fund.sortOrder)]) private var funds: [Fund]
+    @Query private var allRouting: [RoutingCategory]
+    @Query private var allSpend: [SpendCategory]
+    @Query(sort: [SortDescriptor(\MonthlyReview.monthKey, order: .reverse)]) private var allReviews: [MonthlyReview]
+
+    private var ledger: FundLedger { FundLedger(contributions: allRouting, withdrawals: allSpend) }
+    private var activeFunds: [Fund] { funds.filter { !$0.archived } }
+    /// Fund balances are cumulative/global, so only surface them in the most-recent month.
+    private var isLatestMonth: Bool { review.monthKey == allReviews.first?.monthKey }
+
+    private func fund(_ id: UUID?) -> Fund? {
+        guard let id else { return nil }
+        return funds.first { $0.id == id }
+    }
+
+    /// A spend row tagged to a fund is over-withdrawn if its actual exceeds what the fund held.
+    private func isOverWithdrawn(_ category: SpendCategory, ledger: FundLedger) -> Bool {
+        guard let f = fund(category.fundID) else { return false }
+        return category.actual > ledger.availableBefore(category, of: f)
+    }
 
     @AppStorage(ClearanceSettings.incomeKey) private var settingsIncome = ClearanceSettings.defaultIncome
     @AppStorage(ClearanceSettings.baselineWorkDaysKey) private var settingsBaselineWorkDays = ClearanceSettings.defaultBaselineWorkDays
@@ -31,6 +53,15 @@ struct MonthDetailView: View {
         let name: String
         let perform: () -> Void
     }
+
+    /// A pending fund rename awaiting a scope choice (this month / future / everywhere).
+    private struct RenameRequest: Identifiable {
+        let id = UUID()
+        let category: RoutingCategory
+        let newName: String
+    }
+
+    private enum RenameScope { case thisMonth, future, everywhere }
 
     var body: some View {
         GeometryReader { geometry in
@@ -57,6 +88,39 @@ struct MonthDetailView: View {
                 secondaryButton: .cancel()
             )
         }
+        .confirmationDialog(
+            "Rename to \u{201C}\(renameRequest?.newName ?? "")\u{201D}",
+            isPresented: Binding(get: { renameRequest != nil }, set: { if !$0 { renameRequest = nil } }),
+            titleVisibility: .visible,
+            presenting: renameRequest
+        ) { request in
+            Button("Just this month") { applyRename(request, scope: .thisMonth) }
+            Button("This and future months") { applyRename(request, scope: .future) }
+            Button("All months") { applyRename(request, scope: .everywhere) }
+            Button("Cancel", role: .cancel) {}
+        } message: { _ in
+            Text("Where should this fund's new name apply?")
+        }
+    }
+
+    private func applyRename(_ request: RenameRequest, scope: RenameScope) {
+        let newName = request.newName
+        let fundID = request.category.fundID
+        switch scope {
+        case .thisMonth:
+            request.category.name = newName
+        case .future:
+            request.category.name = newName
+            fund(fundID)?.name = newName
+        case .everywhere:
+            fund(fundID)?.name = newName
+            if let fundID {
+                for row in allRouting where row.fundID == fundID { row.name = newName }
+            } else {
+                request.category.name = newName
+            }
+        }
+        renameRequest = nil
     }
 
     private func zoomed(_ value: CGFloat) -> CGFloat {
@@ -65,6 +129,7 @@ struct MonthDetailView: View {
 
     @ViewBuilder
     private func detailContent(for width: CGFloat) -> some View {
+        let ledger = ledger // build the fund ledger once per layout pass, not per row
         if usesTwoColumns(for: width) {
             let spacing = zoomed(18)
             let cardSpacing = zoomed(16)
@@ -76,8 +141,8 @@ struct MonthDetailView: View {
 
                 HStack(alignment: .top, spacing: spacing) {
                     VStack(spacing: cardSpacing) {
-                        clearanceCheckSection
-                        wealthEngineSection
+                        clearanceCheckSection(ledger)
+                        wealthEngineSection(ledger)
                         monthRoutingSummarySection
                     }
                     .frame(width: primaryWidth, alignment: .top)
@@ -100,8 +165,8 @@ struct MonthDetailView: View {
                 header
 
                 VStack(spacing: zoomed(16)) {
-                    clearanceCheckSection
-                    wealthEngineSection
+                    clearanceCheckSection(ledger)
+                    wealthEngineSection(ledger)
                     monthRoutingSummarySection
                     growthEstimatorSection
                 }
@@ -150,7 +215,7 @@ struct MonthDetailView: View {
 
     // MARK: - Clearance Check
 
-    private var clearanceCheckSection: some View {
+    private func clearanceCheckSection(_ ledger: FundLedger) -> some View {
         ReviewCard(title: "The Clearance Check", systemImage: "checkmark.seal") {
             VStack(alignment: .leading, spacing: zoomed(14)) {
                 Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: zoomed(14), verticalSpacing: zoomed(12)) {
@@ -196,9 +261,12 @@ struct MonthDetailView: View {
                         emptyHint("No spend categories yet — add one to track card spend.")
                     } else {
                         ForEach(review.sortedSpendCategories) { category in
-                            SpendCategoryRow(category: category) {
-                                requestRemoval(of: category.name) { delete(spend: category) }
-                            }
+                            SpendCategoryRow(
+                                category: category,
+                                funds: activeFunds,
+                                overWithdrawn: isOverWithdrawn(category, ledger: ledger),
+                                onRemove: { requestRemoval(of: category.name) { delete(spend: category) } }
+                            )
                         }
                     }
                     AddCategoryButton(title: "Add spend category", action: addSpendCategory)
@@ -214,7 +282,7 @@ struct MonthDetailView: View {
 
     private var bufferHero: some View {
         HStack(alignment: .top, spacing: zoomed(14)) {
-            formLabel("Remaining Buffer", detail: "Income - rent - actual card spend")
+            formLabel("Remaining Buffer", detail: "Income - rent - card spend (fund-backed spend excluded)")
             VStack(alignment: .leading, spacing: zoomed(4)) {
                 Text(review.remainingBuffer, format: Formatters.currency)
                     .font(.system(.title, design: .rounded, weight: .bold))
@@ -278,16 +346,19 @@ struct MonthDetailView: View {
 
     // MARK: - Wealth Engine
 
-    private var wealthEngineSection: some View {
+    private func wealthEngineSection(_ ledger: FundLedger) -> some View {
         ReviewCard(title: "The Wealth Engine", systemImage: "arrow.triangle.2.circlepath") {
             VStack(alignment: .leading, spacing: zoomed(12)) {
                 if review.routingCategories.isEmpty {
                     emptyHint("No funds yet — add one to start routing.")
                 } else {
                     ForEach(review.sortedRoutingCategories) { category in
-                        RoutingCategoryRow(category: category) {
-                            requestRemoval(of: category.name) { delete(routing: category) }
-                        }
+                        RoutingCategoryRow(
+                            category: category,
+                            balance: isLatestMonth ? fund(category.fundID).map { ledger.balance(of: $0) } : nil,
+                            onRename: { newName in renameRequest = RenameRequest(category: category, newName: newName) },
+                            onRemove: { requestRemoval(of: category.name) { delete(routing: category) } }
+                        )
                     }
                 }
                 AddCategoryButton(title: "Add fund", action: addRoutingCategory)
@@ -516,17 +587,22 @@ private struct InlineRenameField: View {
     @Binding var name: String
     let placeholder: String
     let revealControl: Bool
+    /// If provided, edits a draft and reports the new name on commit (the caller decides scope)
+    /// instead of binding `name` live. Used for funds, where a rename may span months.
+    var onCommit: ((String) -> Void)? = nil
     @State private var isEditing = false
+    @State private var draft = ""
 
     private var display: String { name.isEmpty ? placeholder : name }
 
     var body: some View {
         HStack(spacing: 6) {
             if isEditing {
-                TextField(placeholder, text: $name)
+                TextField(placeholder, text: onCommit == nil ? $name : $draft)
                     .textFieldStyle(.plain)
                     .font(.subheadline.weight(.semibold))
-                    .onSubmit { isEditing = false }
+                    .onSubmit { commit() }
+                    .accessibilityIdentifier("category rename field")
             } else {
                 Text(display)
                     .font(.subheadline.weight(.semibold))
@@ -534,7 +610,7 @@ private struct InlineRenameField: View {
             }
 
             Button {
-                isEditing.toggle()
+                if isEditing { commit() } else { draft = name; isEditing = true }
             } label: {
                 Image(systemName: isEditing ? "checkmark.circle" : "pencil")
                     .font(.caption)
@@ -545,6 +621,13 @@ private struct InlineRenameField: View {
             .accessibilityLabel(isEditing ? "Finish renaming \(display)" : "Rename \(display)")
             .help(isEditing ? "Finish renaming" : "Rename")
         }
+    }
+
+    private func commit() {
+        isEditing = false
+        guard let onCommit else { return } // live binding already updated `name`
+        let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty, trimmed != name { onCommit(trimmed) }
     }
 }
 
@@ -612,6 +695,8 @@ private extension View {
 private struct SpendCategoryRow: View {
     @Environment(\.appZoomScale) private var appZoomScale
     @Bindable var category: SpendCategory
+    let funds: [Fund]
+    let overWithdrawn: Bool
     let onRemove: () -> Void
     @State private var isHovering = false
 
@@ -620,12 +705,13 @@ private struct SpendCategoryRow: View {
     var body: some View {
         HStack(spacing: zoomed(10)) {
             InlineRenameField(name: $category.name, placeholder: "Category", revealControl: isHovering)
-                .frame(width: zoomed(170), alignment: .leading)
+                .frame(width: zoomed(140), alignment: .leading)
 
-            Spacer(minLength: zoomed(8))
+            Spacer(minLength: zoomed(6))
 
             labeledField("Target", value: $category.target)
             labeledField("Actual", value: $category.actual)
+            fundedByPicker
 
             RemoveCategoryButton(categoryName: category.name, revealed: isHovering, action: onRemove)
         }
@@ -636,7 +722,41 @@ private struct SpendCategoryRow: View {
             RoundedRectangle(cornerRadius: zoomed(14), style: .continuous)
                 .fill(Color(nsColor: .controlBackgroundColor).opacity(0.58))
         }
+        .overlay {
+            if overWithdrawn {
+                RoundedRectangle(cornerRadius: zoomed(14), style: .continuous)
+                    .strokeBorder(Color(.systemRed), lineWidth: 1)
+            }
+        }
         .onHover { isHovering = $0 }
+    }
+
+    private var fundedByPicker: some View {
+        VStack(alignment: .leading, spacing: zoomed(3)) {
+            HStack(spacing: 3) {
+                Text("Funded by")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                if overWithdrawn {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.caption2)
+                        .foregroundStyle(Color(.systemRed))
+                        .help("This withdrawal exceeds the fund's balance — unbacked spend")
+                        .accessibilityLabel("\(category.name) over-withdrawn")
+                }
+            }
+            Picker("Funded by", selection: $category.fundID) {
+                Text("Income").tag(Optional<UUID>.none)
+                ForEach(funds) { fund in
+                    Text(fund.name).tag(Optional(fund.id))
+                }
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .frame(width: zoomed(118))
+            .accessibilityLabel("\(category.name) funded by")
+            .accessibilityIdentifier("\(category.name) funded by")
+        }
     }
 
     private func labeledField(_ title: String, value: Binding<Double>) -> some View {
@@ -645,7 +765,7 @@ private struct SpendCategoryRow: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
             TextField(title, value: value, format: Formatters.number)
-                .financialFieldStyle(width: 88)
+                .financialFieldStyle(width: 76)
                 .accessibilityLabel("\(category.name) \(title)")
         }
     }
@@ -656,6 +776,8 @@ private struct SpendCategoryRow: View {
 private struct RoutingCategoryRow: View {
     @Environment(\.appZoomScale) private var appZoomScale
     @Bindable var category: RoutingCategory
+    let balance: Double?
+    let onRename: (String) -> Void
     let onRemove: () -> Void
     @State private var isHovering = false
 
@@ -672,12 +794,22 @@ private struct RoutingCategoryRow: View {
             .accessibilityLabel("Mark \(displayName) transferred")
             .help("Mark \(displayName) transferred")
 
-            InlineRenameField(name: $category.name, placeholder: "Fund", revealControl: isHovering)
-                .frame(width: zoomed(200), alignment: .leading)
+            InlineRenameField(name: $category.name, placeholder: "Fund", revealControl: isHovering, onCommit: onRename)
+                .frame(width: zoomed(190), alignment: .leading)
+
+            if let balance {
+                Text(balance, format: Formatters.currency)
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(balance >= 0 ? Color(.systemGreen) : Color(.systemRed))
+                    .help("Current fund balance")
+                    .accessibilityLabel("\(displayName) balance")
+                    .accessibilityValue(balance.formatted(Formatters.currency))
+                    .accessibilityIdentifier("\(displayName) balance")
+            }
 
             Spacer(minLength: zoomed(8))
 
-            TextField("Amount", value: $category.target, format: Formatters.number)
+            TextField("\(displayName) amount", value: $category.target, format: Formatters.number)
                 .financialFieldStyle(width: 100)
                 .accessibilityLabel("\(displayName) amount")
 

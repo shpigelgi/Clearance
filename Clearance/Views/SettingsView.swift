@@ -1,11 +1,21 @@
+import SwiftData
 import SwiftUI
 
 struct SettingsView: View {
+    @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var templateStore: CategoryTemplateStore
+
+    @Query(sort: [SortDescriptor(\Fund.sortOrder)]) private var funds: [Fund]
+    @Query private var allRouting: [RoutingCategory]
+    @Query private var allSpend: [SpendCategory]
 
     @AppStorage(ClearanceSettings.incomeKey) private var income = ClearanceSettings.defaultIncome
     @AppStorage(ClearanceSettings.baselineWorkDaysKey) private var baselineWorkDays = ClearanceSettings.defaultBaselineWorkDays
     @AppStorage(ClearanceSettings.rentKey) private var rent = ClearanceSettings.defaultRent
+
+    private var ledger: FundLedger {
+        FundLedger(contributions: allRouting, withdrawals: allSpend)
+    }
 
     var body: some View {
         Form {
@@ -29,41 +39,115 @@ struct SettingsView: View {
                 .accessibilityLabel("Add spend category")
             }
 
-            Section("Wealth Routing Categories") {
-                ForEach($templateStore.routing) { $item in
-                    RoutingTemplateRow(item: $item) { remove(routing: item) }
+            Section("Sinking Funds") {
+                ForEach(funds) { fund in
+                    FundRow(fund: fund, balance: ledger.balance(of: fund))
                 }
-                .onMove { templateStore.routing.move(fromOffsets: $0, toOffset: $1) }
-
-                Button {
-                    templateStore.routing.append(RoutingCategoryTemplate(name: "New fund", target: 0, annualRate: ClearanceSettings.defaultKerenAnnualRate))
-                } label: {
+                Button(action: addFund) {
                     Label("Add Fund", systemImage: "plus.circle")
                 }
                 .accessibilityLabel("Add fund")
             }
 
             Section {
-                Text("These are the defaults new months start from. Editing them affects new months only — existing months keep their own categories, which you edit from each month.")
+                Text("Spend categories are defaults new months start from. Funds persist across months — each month routes into them and their balance carries over. Editing here affects new months; rename a fund inside a month to change past months.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
         .padding(24)
-        .frame(minWidth: 560, idealWidth: 640, maxWidth: 760, minHeight: 600, idealHeight: 720)
+        .frame(minWidth: 560, idealWidth: 660, maxWidth: 780, minHeight: 620, idealHeight: 760)
     }
 
     private func remove(spend item: SpendCategoryTemplate) {
         templateStore.spend.removeAll { $0.id == item.id }
     }
 
-    private func remove(routing item: RoutingCategoryTemplate) {
-        templateStore.routing.removeAll { $0.id == item.id }
+    private func addFund() {
+        let order = (funds.map(\.sortOrder).max() ?? -1) + 1
+        modelContext.insert(Fund(
+            name: "New fund",
+            defaultContribution: 0,
+            defaultRate: ClearanceSettings.defaultKerenAnnualRate,
+            sortOrder: order
+        ))
     }
 }
 
-// MARK: - Template rows
+// MARK: - Fund row (persistent sinking fund)
+
+private struct FundRow: View {
+    @Bindable var fund: Fund
+    let balance: Double
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                TextField("Name", text: $fund.name)
+                    .textFieldStyle(.roundedBorder)
+                    .accessibilityLabel("Fund name")
+
+                Spacer(minLength: 0)
+
+                Text(balance, format: Formatters.currency)
+                    .font(.headline.monospacedDigit())
+                    .foregroundStyle(balance >= 0 ? Color(.systemGreen) : Color(.systemRed))
+                    .accessibilityLabel("\(fund.name) balance")
+                    .accessibilityValue(balance.formatted(Formatters.currency))
+
+                Button {
+                    fund.archived.toggle()
+                } label: {
+                    Image(systemName: fund.archived ? "tray.and.arrow.up" : "archivebox")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help(fund.archived ? "Unarchive (include in new months)" : "Archive (hide from new months)")
+                .accessibilityLabel(fund.archived ? "Unarchive \(fund.name)" : "Archive \(fund.name)")
+            }
+
+            HStack(spacing: 14) {
+                numberField("Monthly", value: $fund.defaultContribution, label: "\(fund.name) monthly contribution")
+                percentField("Growth", value: $fund.defaultRate, label: "\(fund.name) growth rate")
+                numberField("Opening", value: $fund.openingBalance, label: "\(fund.name) opening balance")
+            }
+        }
+        .padding(.vertical, 2)
+        .opacity(fund.archived ? 0.5 : 1)
+    }
+
+    private func numberField(_ caption: String, value: Binding<Double>, label: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(caption).font(.caption2).foregroundStyle(.secondary)
+            TextField(caption, value: value, format: Formatters.number)
+                .textFieldStyle(.roundedBorder)
+                .multilineTextAlignment(.trailing)
+                .frame(width: 96)
+                .accessibilityLabel(label)
+        }
+    }
+
+    private func percentField(_ caption: String, value: Binding<Double>, label: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(caption).font(.caption2).foregroundStyle(.secondary)
+            HStack(spacing: 4) {
+                TextField(caption, value: percent(value), format: Formatters.number)
+                    .textFieldStyle(.roundedBorder)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 56)
+                    .accessibilityLabel(label)
+                Text("%").foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func percent(_ value: Binding<Double>) -> Binding<Double> {
+        Binding { value.wrappedValue * 100 } set: { value.wrappedValue = $0 / 100 }
+    }
+}
+
+// MARK: - Spend template row
 
 private struct SpendTemplateRow: View {
     @Binding var item: SpendCategoryTemplate
@@ -80,44 +164,6 @@ private struct SpendTemplateRow: View {
                 .multilineTextAlignment(.trailing)
                 .frame(width: 120)
                 .accessibilityLabel("\(item.name) default target")
-
-            RemoveTemplateButton(name: item.name, action: onRemove)
-        }
-    }
-}
-
-private struct RoutingTemplateRow: View {
-    @Binding var item: RoutingCategoryTemplate
-    let onRemove: () -> Void
-
-    private var percentBinding: Binding<Double> {
-        Binding {
-            item.annualRate * 100
-        } set: { newValue in
-            item.annualRate = newValue / 100
-        }
-    }
-
-    var body: some View {
-        HStack(spacing: 10) {
-            TextField("Name", text: $item.name)
-                .textFieldStyle(.roundedBorder)
-                .accessibilityLabel("Fund name")
-
-            TextField("Target", value: $item.target, format: Formatters.number)
-                .textFieldStyle(.roundedBorder)
-                .multilineTextAlignment(.trailing)
-                .frame(width: 100)
-                .accessibilityLabel("\(item.name) default target")
-
-            HStack(spacing: 4) {
-                TextField("Rate", value: percentBinding, format: Formatters.number)
-                    .textFieldStyle(.roundedBorder)
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 56)
-                    .accessibilityLabel("\(item.name) default annual rate")
-                Text("%").foregroundStyle(.secondary)
-            }
 
             RemoveTemplateButton(name: item.name, action: onRemove)
         }

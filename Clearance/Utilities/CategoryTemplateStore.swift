@@ -19,13 +19,14 @@ struct RoutingCategoryTemplate: Codable, Identifiable, Equatable {
 /// The user-editable template that brand-new months inherit. Persisted as JSON in
 /// UserDefaults and shared app-wide (Settings edits it; SidebarView.createMonth reads it).
 /// Editing the template only affects future months — existing months are edited per-month.
+/// Spend categories are still a UserDefaults template that new months inherit. Routing funds
+/// are no longer a template here — they're persistent `Fund` entities (see `FundMigration`),
+/// though `defaultRouting` is kept as the seed for first-run funds.
 @MainActor
 final class CategoryTemplateStore: ObservableObject {
     @Published var spend: [SpendCategoryTemplate] { didSet { persist() } }
-    @Published var routing: [RoutingCategoryTemplate] { didSet { persist() } }
 
     private let spendKey = "spendCategoryTemplate"
-    private let routingKey = "routingCategoryTemplate"
     private let defaults: UserDefaults
     private let isVolatile: Bool
 
@@ -36,10 +37,8 @@ final class CategoryTemplateStore: ObservableObject {
         self.defaults = defaults
         if isVolatile {
             spend = Self.defaultSpend
-            routing = Self.defaultRouting
         } else {
             spend = Self.load(spendKey, from: defaults) ?? Self.defaultSpend
-            routing = Self.load(routingKey, from: defaults) ?? Self.defaultRouting
             persist() // ensure first-run seed is saved (didSet doesn't fire during init)
         }
     }
@@ -52,7 +51,6 @@ final class CategoryTemplateStore: ObservableObject {
     private func persist() {
         guard !isVolatile else { return } // never write the real template during UI tests
         if let data = try? JSONEncoder().encode(spend) { defaults.set(data, forKey: spendKey) }
-        if let data = try? JSONEncoder().encode(routing) { defaults.set(data, forKey: routingKey) }
     }
 
     // First-run defaults — note "Car fund" in place of the former "Abarth Keren Kaspit".

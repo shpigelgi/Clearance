@@ -9,7 +9,7 @@ final class ClearanceAppModel: ObservableObject {
 
     init() {
         do {
-            let schema = Schema([MonthlyReview.self, SpendCategory.self, RoutingCategory.self])
+            let schema = Schema([MonthlyReview.self, SpendCategory.self, RoutingCategory.self, Fund.self])
             // UI tests launch with CLEARANCE_UITEST_INMEMORY=1 so the suite runs
             // against a throwaway in-memory store and never touches real data.
             let inMemoryOnly = ProcessInfo.processInfo.environment["CLEARANCE_UITEST_INMEMORY"] == "1"
@@ -23,8 +23,10 @@ final class ClearanceAppModel: ObservableObject {
             modelContainer = container
             exportManager = DataExportManager(modelContainer: container)
 
-            // Seed dynamic categories for any pre-existing months (idempotent, non-destructive).
+            // Seed dynamic categories for any pre-existing months (idempotent, non-destructive),
+            // then establish the persistent Fund list and link routing rows to it.
             CategoryBackfill.run(in: container.mainContext)
+            FundMigration.run(in: container.mainContext)
         } catch {
             fatalError("Unable to create SwiftData model container: \(error)")
         }

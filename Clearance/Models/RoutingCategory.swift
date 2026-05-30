@@ -11,14 +11,17 @@ final class RoutingCategory {
     var didTransfer: Bool = false
     var annualRate: Double = 0
     var sortOrder: Int = 0
+    /// Links this monthly contribution to its persistent `Fund` (nil before sinking funds existed).
+    var fundID: UUID?
     var review: MonthlyReview?
 
-    init(name: String, target: Double, didTransfer: Bool = false, annualRate: Double, sortOrder: Int) {
+    init(name: String, target: Double, didTransfer: Bool = false, annualRate: Double, sortOrder: Int, fundID: UUID? = nil) {
         self.id = UUID()
         self.name = name
         self.target = target
         self.didTransfer = didTransfer
         self.annualRate = annualRate
         self.sortOrder = sortOrder
+        self.fundID = fundID
     }
 }

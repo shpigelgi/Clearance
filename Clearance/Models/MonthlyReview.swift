@@ -113,8 +113,10 @@ extension MonthlyReview {
         routingCategories.sorted { $0.sortOrder < $1.sortOrder }
     }
 
+    /// Only spend funded by *this month's income* counts against the buffer. Rows tagged to a
+    /// Fund (`fundID != nil`) are withdrawals from pre-saved money and are netted there instead.
     var totalActualSpend: Double {
-        spendCategories.reduce(0) { $0 + $1.actual }
+        spendCategories.reduce(0) { $0 + ($1.fundID == nil ? $1.actual : 0) }
     }
 
     var remainingBuffer: Double {
