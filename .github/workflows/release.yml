@@ -74,7 +74,8 @@ jobs:
 
       - name: Sign update + regenerate appcast
         run: |
-          printf '%s' "${{ secrets.SPARKLE_PRIVATE_KEY }}" > "$RUNNER_TEMP/ed_key"
+          # Trim any stray whitespace/newlines so the key is clean base64.
+          printf '%s' "${{ secrets.SPARKLE_PRIVATE_KEY }}" | tr -d '[:space:]' > "$RUNNER_TEMP/ed_key"
           ./sparkle/bin/generate_appcast \
             --ed-key-file "$RUNNER_TEMP/ed_key" \
             --download-url-prefix "https://github.com/shpigelgi/Clearance/releases/download/${GITHUB_REF_NAME}/" \
