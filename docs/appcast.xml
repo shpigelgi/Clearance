@@ -3,12 +3,12 @@
     <channel>
         <title>Clearance</title>
         <item>
-            <title>1.0.1</title>
-            <pubDate>Sat, 30 May 2026 15:59:51 +0000</pubDate>
-            <sparkle:version>3</sparkle:version>
-            <sparkle:shortVersionString>1.0.1</sparkle:shortVersionString>
+            <title>1.0.2</title>
+            <pubDate>Mon, 01 Jun 2026 20:51:36 +0000</pubDate>
+            <sparkle:version>4</sparkle:version>
+            <sparkle:shortVersionString>1.0.2</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/shpigelgi/Clearance/releases/download/v1.0.1/Clearance-1.0.1.dmg" length="1503656" type="application/octet-stream" sparkle:edSignature="HRw1eSEc7g68DjWTHYFHGwl8SQo0wKBbfpZIr+Rv7RwU727SOxHC1oZzZFh0IC+iCjo5diuOMAsKv2DcpOxCBQ=="/>
+            <enclosure url="https://github.com/shpigelgi/Clearance/releases/download/v1.0.2/Clearance-1.0.2.dmg" length="1834308" type="application/octet-stream" sparkle:edSignature="kM9Bogag1ZZcvPxnNo++ioEwLuvoRQjoY/KCSpH05zOi4Zuk9Cxcp0qJyYZrJdnCpU8U7699B0HPTA2elJa7DQ=="/>
         </item>
     </channel>
 </rss>
