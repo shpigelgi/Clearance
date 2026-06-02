@@ -268,7 +268,7 @@ private struct MonthRow: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(Formatters.monthTitle(from: review.monthKey))
                 .font(.headline)
-            Text("\(review.remainingBuffer >= 0 ? "Surplus" : "Deficit"): \(review.remainingBuffer.formatted(Formatters.currency))")
+            Text("\(review.remainingBuffer >= 0 ? "Surplus" : "Deficit"): \(abs(review.remainingBuffer).formatted(Formatters.currency))")
                 .font(.caption)
                 .foregroundStyle(review.remainingBuffer >= 0 ? Color(.systemGreen) : Color(.systemRed))
         }
