@@ -192,7 +192,7 @@ private struct MetricTile: View {
         .padding(zoomed(16))
         .background {
             RoundedRectangle(cornerRadius: zoomed(16), style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor))
+                .fill(.primary.opacity(0.05))
         }
     }
 }

@@ -76,7 +76,6 @@ struct MonthDetailView: View {
                     .frame(maxWidth: .infinity, alignment: .top)
             }
         }
-        .background(Color(nsColor: .windowBackgroundColor))
         .onAppear {
             focusedField = review.calculatesIncomeFromDays ? .daysWorked : .income
         }
@@ -285,7 +284,7 @@ struct MonthDetailView: View {
             formLabel("Remaining Buffer", detail: "Income - rent - card spend (fund-backed spend excluded)")
             VStack(alignment: .leading, spacing: zoomed(4)) {
                 Text(review.remainingBuffer, format: Formatters.currency)
-                    .font(.system(.title, design: .rounded, weight: .bold))
+                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
                     .monospacedDigit()
                     .foregroundStyle(bufferStatusColor)
                 Label(bufferStatusLabel, systemImage: bufferStatusSystemImage)
@@ -537,7 +536,7 @@ struct MonthDetailView: View {
     }
 
     private func sectionCaption(_ text: String) -> some View {
-        Text(text.uppercased())
+        Text(text)
             .font(.caption2.weight(.semibold))
             .foregroundStyle(.secondary)
             .accessibilityAddTraits(.isHeader)
@@ -737,6 +736,7 @@ private struct SpendCategoryRow: View {
                 Text("Funded by")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
                 if overWithdrawn {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.caption2)
@@ -764,6 +764,7 @@ private struct SpendCategoryRow: View {
             Text(title)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
             TextField(title, value: value, format: Formatters.number)
                 .financialFieldStyle(width: 76)
                 .accessibilityLabel("\(category.name) \(title)")
@@ -799,7 +800,7 @@ private struct RoutingCategoryRow: View {
 
             if let balance {
                 Text(balance, format: Formatters.currency)
-                    .font(.caption.monospacedDigit())
+                    .font(.footnote.weight(.medium).monospacedDigit())
                     .foregroundStyle(balance >= 0 ? Color(.systemGreen) : Color(.systemRed))
                     .help("Current fund balance")
                     .accessibilityLabel("\(displayName) balance")
@@ -852,6 +853,7 @@ private struct RateRow: View {
                 Text("Annual growth assumption")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
 
             Spacer(minLength: zoomed(8))

@@ -20,9 +20,9 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section("Monthly Baseline") {
-                CurrencyPreferenceField("Income", value: $income, defaultValue: ClearanceSettings.defaultIncome)
-                NumberPreferenceField("Baseline Work Days", value: $baselineWorkDays, defaultValue: ClearanceSettings.defaultBaselineWorkDays)
-                CurrencyPreferenceField("Rent", value: $rent, defaultValue: ClearanceSettings.defaultRent)
+                PreferenceField("Income", value: $income, defaultValue: ClearanceSettings.defaultIncome)
+                PreferenceField("Baseline Work Days", value: $baselineWorkDays, defaultValue: ClearanceSettings.defaultBaselineWorkDays)
+                PreferenceField("Rent", value: $rent, defaultValue: ClearanceSettings.defaultRent)
             }
 
             Section("Card Spend Categories") {
@@ -50,13 +50,12 @@ struct SettingsView: View {
             }
 
             Section {
-                Text("Spend categories are defaults new months start from. Funds persist across months — each month routes into them and their balance carries over. Editing here affects new months; rename a fund inside a month to change past months.")
+                Text("Spend categories are defaults new months start from. Funds persist across months — each month routes into them and their balance carries over. Editing here affects new months; rename a fund inside a month to change past months.\n\nStart is the value a fund held before you began tracking it in Clearance. The displayed current balance is that starting point plus all confirmed contributions minus withdrawals — it reflects this fund only, not total liquid net worth.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
-        .padding(24)
         .frame(minWidth: 560, idealWidth: 660, maxWidth: 780, minHeight: 620, idealHeight: 760)
     }
 
@@ -81,6 +80,10 @@ private struct FundRow: View {
     @Bindable var fund: Fund
     let balance: Double
 
+    private var ratePercent: Binding<Double> {
+        Binding { fund.defaultRate * 100 } set: { fund.defaultRate = $0 / 100 }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
@@ -90,11 +93,18 @@ private struct FundRow: View {
 
                 Spacer(minLength: 0)
 
-                Text(balance, format: Formatters.currency)
-                    .font(.headline.monospacedDigit())
-                    .foregroundStyle(balance >= 0 ? Color(.systemGreen) : Color(.systemRed))
-                    .accessibilityLabel("\(fund.name) balance")
-                    .accessibilityValue(balance.formatted(Formatters.currency))
+                VStack(alignment: .trailing, spacing: 1) {
+                    Text("Current balance")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Text(balance, format: Formatters.currency)
+                        .font(.headline.monospacedDigit())
+                        .foregroundStyle(balance >= 0 ? Color(.systemGreen) : Color(.systemRed))
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(fund.name) current balance")
+                .accessibilityValue(balance.formatted(Formatters.currency))
+                .help("Starting balance + confirmed contributions − withdrawals")
 
                 Button {
                     fund.archived.toggle()
@@ -107,43 +117,45 @@ private struct FundRow: View {
                 .accessibilityLabel(fund.archived ? "Unarchive \(fund.name)" : "Archive \(fund.name)")
             }
 
-            HStack(spacing: 14) {
-                numberField("Monthly", value: $fund.defaultContribution, label: "\(fund.name) monthly contribution")
-                percentField("Growth", value: $fund.defaultRate, label: "\(fund.name) growth rate")
-                numberField("Opening", value: $fund.openingBalance, label: "\(fund.name) opening balance")
+            // Grid locks each column width to its widest cell, so caption labels
+            // can never be compressed narrower than the field below them.
+            Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 2) {
+                GridRow {
+                    Text("Monthly").font(.caption2).foregroundStyle(.secondary)
+                    Text("Growth").font(.caption2).foregroundStyle(.secondary)
+                    Text("Start").font(.caption2).foregroundStyle(.secondary)
+                }
+                GridRow {
+                    TextField("Monthly", value: $fund.defaultContribution, format: Formatters.number)
+                        .textFieldStyle(.roundedBorder)
+                        .multilineTextAlignment(.trailing)
+                        .frame(width: 96)
+                        .labelsHidden()
+                        .accessibilityLabel("\(fund.name) monthly contribution")
+
+                    HStack(spacing: 4) {
+                        TextField("Growth", value: ratePercent, format: Formatters.number)
+                            .textFieldStyle(.roundedBorder)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 56)
+                            .labelsHidden()
+                            .accessibilityLabel("\(fund.name) growth rate")
+                        Text("%")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.secondary)
+                    }
+
+                    TextField("Start", value: $fund.openingBalance, format: Formatters.number)
+                        .textFieldStyle(.roundedBorder)
+                        .multilineTextAlignment(.trailing)
+                        .frame(width: 96)
+                        .labelsHidden()
+                        .accessibilityLabel("\(fund.name) starting balance — value before Clearance began tracking this fund")
+                }
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 4)
         .opacity(fund.archived ? 0.5 : 1)
-    }
-
-    private func numberField(_ caption: String, value: Binding<Double>, label: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(caption).font(.caption2).foregroundStyle(.secondary)
-            TextField(caption, value: value, format: Formatters.number)
-                .textFieldStyle(.roundedBorder)
-                .multilineTextAlignment(.trailing)
-                .frame(width: 96)
-                .accessibilityLabel(label)
-        }
-    }
-
-    private func percentField(_ caption: String, value: Binding<Double>, label: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(caption).font(.caption2).foregroundStyle(.secondary)
-            HStack(spacing: 4) {
-                TextField(caption, value: percent(value), format: Formatters.number)
-                    .textFieldStyle(.roundedBorder)
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 56)
-                    .accessibilityLabel(label)
-                Text("%").foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    private func percent(_ value: Binding<Double>) -> Binding<Double> {
-        Binding { value.wrappedValue * 100 } set: { value.wrappedValue = $0 / 100 }
     }
 }
 
@@ -187,36 +199,7 @@ private struct RemoveTemplateButton: View {
 
 // MARK: - Baseline preference fields
 
-private struct CurrencyPreferenceField: View {
-    let title: String
-    @Binding var value: Double
-    let defaultValue: Double
-
-    init(_ title: String, value: Binding<Double>, defaultValue: Double) {
-        self.title = title
-        _value = value
-        self.defaultValue = defaultValue
-    }
-
-    var body: some View {
-        LabeledContent(title) {
-            RevertableInputRow(
-                title: title,
-                isDefault: ValueComparison.approximatelyEqual(value, defaultValue),
-                revert: { value = defaultValue }
-            ) {
-                TextField(title, value: $value, format: Formatters.number)
-                    .textFieldStyle(.roundedBorder)
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 132)
-                    .accessibilityLabel(title)
-                    .labelsHidden()
-            }
-        }
-    }
-}
-
-private struct NumberPreferenceField: View {
+private struct PreferenceField: View {
     let title: String
     @Binding var value: Double
     let defaultValue: Double
